@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+    <head>
+        <title> Fruits Example </title>
+        <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+    </head>
+    <body>
+        <div id="fruit"></div>
+        <script>
+            var fruits = [{
+             kind: "grape",
+             color: "red",
+             quantity: 12,
+             tasty: true
+             },
+             {
+             kind: "kiwi",
+             color: "brown",
+             quantity: 98,
+             tasty: true
+             },
+             {
+             kind: "banana",
+             color: "yellow",
+             quantity: 0,
+             tasty: true
+             }];
+
+            var fruit = document.getElementById("fruit");
+            fruit.style.backgroundColor = "lightgrey";
+
+            for (var i = 0; i < fruits.length; ++i){
+                let str = fruits[i].quantity + ' ' + fruits[i].kind;
+                var par = document.createElement("div");
+                par.style.color = fruits[i].color
+                var t = document.createTextNode(str);
+                par.appendChild(t);
+                fruit.appendChild(par);
+            }
+        </script>
+    </body>
+</html>
