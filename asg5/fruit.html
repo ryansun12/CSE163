@@ -6,31 +6,30 @@
     </head>
     <body>
         <div id="fruit"></div>
+        <script>
+            var fruits = [{
+             kind: "grape",
+             color: "red",
+             quantity: 12,
+             tasty: true
+             },
+             {
+             kind: "kiwi",
+             color: "brown",
+             quantity: 98,
+             tasty: true
+             },
+             {
+             kind: "banana",
+             color: "yellow",
+             quantity: 0,
+             tasty: true
+             }];
+        
+            d3.select("div").style("background", "lightgrey");
+            for (var i = 0; i < fruits.length; i++){
+                d3.select("div").append("div").text(`${fruits[i].quantity} ${fruits[i].kind}`).attr("style", `color: ${fruits[i].color}`);
+            }
+        </script>
     </body>
 </html>
-
-<script>
-    var fruits = [{
-     kind: "grape",
-     color: "red",
-     quantity: 12,
-     tasty: true
-     },
-     {
-     kind: "kiwi",
-     color: "brown",
-     quantity: 98,
-     tasty: true
-     },
-     {
-     kind: "banana",
-     color: "yellow",
-     quantity: 0,
-     tasty: true
-     }];
-
-    d3.select("div").style("background", "lightgrey");
-    for (var i = 0; i < fruits.length; i++){
-        d3.select("div").append("div").text(`${fruits[i].quantity} ${fruits[i].kind}`).attr("style", `color: ${fruits[i].color}`);
-    }
-</script>
