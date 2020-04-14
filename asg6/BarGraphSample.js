@@ -113,10 +113,20 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
     */
     xScale.domain(data.map(function(d){ return d.key; }));
     yScale.domain([0,d3.max(data, function(d) {return d.value; })]);
+
+
+    /* 
+        Created this to use later for assigning colors to the d.values 
+        source: d3 documentation under d3-scale
+    */
+    var colors = d3.scaleLinear()
+    .domain(yScale.domain()) //same as yScale's domain
+    .range(['blue','darkblue']); //blue to dark blue
+
     // Creating rectangular bars to represent the data. 
     // Add comments to explain the code below
     /*
-        This uses the previously created svg variable, which adds the svg
+        This uses the previously created svg variable that adds the svg
         element to the html, and selects all "rect" elements, where 
         there are none, and so it binds the data from the csv to this empty
         set. The enter() call then will automatically detect that there
@@ -126,9 +136,12 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
         entry. The transition of 1000 ms is associated with the transform
         property declared earlier, and each subsequent rectangle appeneded
         is delayed by an additional 200 ms compared to the previous one. 
-        Attributes x, y, width, height, were provided, and I added the
-        color scale such that higher d.values will have darker shades of blue.
+        Attributes x, y, width, height, were provided, and they reference
+        and correspond to the xScale, yScale, as defined previously. 
+        I also added the color scale such that higher d.values will have darker
+        shades of blue using my colors variable defined above.
     */
+
     svg.selectAll("rect")
         .data(data)
         .enter()
@@ -146,18 +159,16 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
 			 return height- yScale(d.value);
         })
         /* 
+           create increasing to decreasing shade of blue as shown on the output
+
             I added this to define the colors for each rectangle in the graph. 
-            source: d3 documentation under 'Colors' gives a 'darker' function.
-            This makes higher d.values way darker than the one in the example,
-            but it is a much shorter solution than creating a separate color 
-            scale. Not sure if this is 'acceptable'.
-
-            create increasing to decreasing shade of blue as shown on the output
+            colors is defined previously. 
         */
-        .attr("fill", d => d3.color('blue').darker(d.value));
+        .attr("fill", d => colors(d.value));
 
-    // Label the data values(d.value)
     /*
+        Label the data values(d.value)
+
         loop over the data again to assign labels for each rect.
         labeled with data values (d.value)
     */
@@ -167,7 +178,7 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
     .append("text")
     .attr("fill", "white")
     .attr("x", d => xScale(d.key) + 2) // copied from above but added constants
-    .attr("y", d => yScale(d.value) + 12) //to make it more aligned
+    .attr("y", d => yScale(d.value) + 13) //to make it more aligned
     .text( d => d.value);
     
     
@@ -182,11 +193,10 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
         .style("text-anchor", "end")
         .attr("font-size", "10px")
         .attr("transform", "rotate(-60)");
-        
-    
-    // Draw yAxis and position the label
 
     /*
+        Draw yAxis and position the label
+
         Draws the yAxis. I separated it from the label because combining the 
         label with this got pretty messy
     */
@@ -195,7 +205,7 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
     .call(yAxis)
 
     /*
-        Adds a caption to the Y-axis. 
+        Adds the label to the Y-axis. 
         Not sure entirely if there is a better way, but the way I chose was
         to append text to the svg. The attributes are all standard css
         attributes, and I chose these dx and dy values because they
