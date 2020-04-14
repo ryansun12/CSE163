@@ -1,0 +1,34 @@
+body{
+    background-color: #E6E6E6;
+
+    /* Added to make chart centered, it was originally 
+    floating left and it looked bad*/
+    text-align: center;
+}
+
+p{
+    text-indent: 40px;
+}
+
+/*Add .axis path and .axis line commans as described in the book */
+
+/*
+    Line, path, and text make up the axis, so they all need to be defined.
+    The path and line are styled together, where 'line' represents the ticks on
+    the axis 'path' defines the vertical and horizontal axis lines. Stroke
+    is the color of the lines while shape-rendering tells the renderer
+    how to render the svg elements. It can be set to auto, optimizeSpeed,
+    crispEdges, or geometricPrecision. The book uses crispEdges, so that is
+    what I decided to use.
+*/
+.axis line,
+.axis path{
+    stroke:black;
+    shape-rendering: crispEdges;
+}
+
+.axis text{
+    font: Times;
+    font-size: 12px;
+    font-weight: bold;
+}
