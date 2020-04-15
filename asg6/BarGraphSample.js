@@ -93,8 +93,10 @@ the difference between .csv, .tsv and .json files. To import a .tsv or
     The '+' operator changes the read in string from csv to a numerical 
     value that we can work with and visualize. 
 
-    Side note: I had to change this to a promise ( .then() function ) for it to
-    work because it was giving me a'data.forEach is not a function' error.
+    Side note: I changed this to a promise ( .then() notation) 
+    because the originally provided bracket notation would require 
+    more changes to the code structure. Maybe this is because the code 
+    was originally written in older Javascript (ES5) ?
 */
 d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
     data.forEach(function(d) {
@@ -117,6 +119,10 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
 
     /* 
         Created this to use later for assigning colors to the d.values 
+        Creates a linear scale with the same domain as yScale, which
+        has the interval 0 to the max of d.value for d in data. The range
+        is blue to dark blue so that the d.value will be mapped correspondingly
+        to a darker blue shade if the value is higher, and vice versa. 
         source: d3 documentation under d3-scale
     */
     var colors = d3.scaleLinear()
@@ -162,8 +168,10 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
            create increasing to decreasing shade of blue as shown on the output
 
             I added this to define the colors for each rectangle in the graph. 
-            colors is defined previously. 
+            "colors" is defined previously. This maps the d.value to the
+            range from blue to dark blue.
         */
+        // .attr("fill", d => d3.color('blue').darker([d.value]))
         .attr("fill", d => colors(d.value));
 
     /*
@@ -172,13 +180,15 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
         loop over the data again to assign labels for each rect.
         labeled with data values (d.value)
     */
-    svg.selectAll("temp") // some empty set to append text to
+    svg.selectAll("rectLabels") // some empty set to append text to
     .data(data) //loop over data
     .enter()
     .append("text")
     .attr("fill", "white")
-    .attr("x", d => xScale(d.key) + 2) // copied from above but added constants
-    .attr("y", d => yScale(d.value) + 13) //to make it more aligned
+    .attr("dx", d => xScale(d.key) + 20) //copied from above but added 
+                                         //constants to make it more aligned
+    .attr("dy", d => yScale(d.value) + 14) 
+    .attr("text-anchor", "middle") //centers the corresponding text with bars
     .text( d => d.value);
     
     
