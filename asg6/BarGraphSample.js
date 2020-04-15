@@ -185,9 +185,9 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
     .enter()
     .append("text")
     .attr("fill", "white")
-    .attr("dx", d => xScale(d.key) + 20) //copied from above but added 
+    .attr("dx", d => xScale(d.key) + margin.right/2) //copied from above but added 
                                          //constants to make it more aligned
-    .attr("dy", d => yScale(d.value) + 14) 
+    .attr("dy", d => yScale(d.value) + margin.top + 3) 
     .attr("text-anchor", "middle") //centers the corresponding text with bars
     .text( d => d.value);
     
