@@ -34,7 +34,10 @@ var margin = {top: 10, right: 40, bottom: 150, left: 50},
     that there needs to be a "transition" attribute set for it to work, just 
     like in standard CSS. This transformation makes it so that all the 
     elements eventually appened to this svg will appear to fall from the
-    top left corner of the graph on load.
+    top left corner of the graph on load. The <g> tag groups the elements
+    together such that all the svg elements will use utilize the 
+    transform property specified: translating such that the margins
+    are accounted for. 
 */
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -71,6 +74,10 @@ var yScale = d3.scaleLinear().range([height, 0]);
 // Define tick marks on the y-axis as shown on the output with an interval of 5 and $ sign
 var xAxis = d3.axisBottom(xScale);
 
+// This line was provided in the first version of the assignment before the 
+// changes, but what it does is is positions the Y scale to the left of the
+// canvas with ticks of 5, formatted with adding a $ before the eventual
+// d.values itertated from the data. 
 var yAxis = d3.axisLeft(yScale).ticks(5).tickFormat( function(d) { return "$" + d });
 
 /* --------------------------------------------------------------------
@@ -97,6 +104,9 @@ the difference between .csv, .tsv and .json files. To import a .tsv or
     because the originally provided bracket notation would require 
     more changes to the code structure. Maybe this is because the code 
     was originally written in older Javascript (ES5) ?
+
+    Update: There was a new version provided, but I chose to 
+    keep this version simply because it works. 
 */
 d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
     data.forEach(function(d) {
@@ -184,6 +194,8 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
     .data(data) //loop over data
     .enter()
     .append("text")
+    .transition().duration(1000) //copied from the transition provided
+    .delay(function(d,i) {return i * 200;}) //delays subsequent labels
     .attr("fill", "white")
     .attr("dx", d => xScale(d.key) + margin.right/2) //copied from above but added 
                                          //constants to make it more aligned
