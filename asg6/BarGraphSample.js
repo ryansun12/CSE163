@@ -30,13 +30,9 @@ var margin = {top: 10, right: 40, bottom: 150, left: 50},
     The "g" tag groups the svg elements that will be added later together, and
     is not specific to d3. The transform attribute is set to translate 
     margin.left (50) and margin.top (10), which in CSS means simply to
-    translate the element in the respective x and y direction. That also means
-    that there needs to be a "transition" attribute set for it to work, just 
-    like in standard CSS. This transformation makes it so that all the 
-    elements eventually appened to this svg will appear to fall from the
-    top left corner of the graph on load. The <g> tag groups the elements
-    together such that all the svg elements will use utilize the 
-    transform property specified: translating such that the margins
+    translate the element in the respective x and y direction. The <g> tag 
+    groups the elements together such that all the svg elements will use 
+    utilize the transform property specified: translating such that the margins
     are accounted for. 
 */
 var svg = d3.select("body").append("svg")
@@ -149,8 +145,8 @@ d3.csv("GDP2020TrillionUSDollars.csv").then(function(data){
         are no previous 'rect' elements associated, so it creates a rect 
         element for every entry in data and applies all the associated 
         attributes to each rectangle, based on the key, value pair for each
-        entry. The transition of 1000 ms is associated with the transform
-        property declared earlier, and each subsequent rectangle appeneded
+        entry. The transition of 1000 ms is associated with the rectangles
+        falling into place, and each subsequent rectangle appeneded
         is delayed by an additional 200 ms compared to the previous one. 
         Attributes x, y, width, height, were provided, and they reference
         and correspond to the xScale, yScale, as defined previously. 
