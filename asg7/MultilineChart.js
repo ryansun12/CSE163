@@ -5,7 +5,7 @@ var margin = { top: 10, right: 100, bottom: 50, left: 80 },
     height = 500 - margin.top - margin.bottom;
 var xScale = d3.scaleTime().range([0, width]).domain([2000,2014])
 var yScale = d3.scaleLinear().range([height, 0]);
-var xAxis = d3.axisBottom(xScale).tickFormat(function(d,i){return 2000 + i});
+var xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
 var yAxis = d3.axisLeft(yScale).ticks(7).tickFormat(function (d) { return d });
 
 // Setup the svg: also copied from assignment 6
@@ -15,17 +15,33 @@ var svg = d3.select("body").append("svg")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
-// Define lines for use. This was constructed after I reshaped the raw data
+// Define lines for use. This was defined after I reshaped the raw data
 // to match the key:value pairs. 
 var lines = d3.line() // "display line shape"
-.curve(d3.curveBasis) // "to interpolate the curve"
-.x( d => xScale(d.year))
-.y( d => yScale(d.value));
+    .curve(d3.curveBasis) // "to interpolate the curve"
+    .x( d => xScale(d.year))
+    .y( d => yScale(d.value));
 
+//To parse the data from string to date
+var parseTime = d3.timeParse("%Y")
 
 // List of countries required to parse for in the raw csv.
-const countries = ["Brazil", "Russia", "India", "China", "South Africa","United States"]
+const countries = ["Brazil", "Russia", "India", "China", "South Africa", "United States"]
 let tempData = [] //Stores temporary parsed csv data
+
+
+//Set up the transition 
+// Source: https://bl.ocks.org/mbostock/5649592
+function transition(path) {
+    path.transition()
+        .duration(2000)
+        .attrTween("stroke-dasharray", tweenDash)
+    }
+function tweenDash() {
+var l = this.getTotalLength(),
+    i = d3.interpolateString("0," + l, l + "," + l);
+return function(t) { return i(t); };
+}
 
 //Read the raw CSV and draw chart
 d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
@@ -64,8 +80,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
     
     //Now to draw the lines, reshaping the data seems necessary :(
     //Here I am brute forcing it and storing into data[] as normalized
-    // k,v pairs with 'year' and 'value'. I Probably should've done this
-    // earlier... oh well. 
+    // k,v pairs with 'year' and 'value'. 
     newData = []
     data = []
     for (entry in tempData){
@@ -77,11 +92,14 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         data.push({'country' : tempData[entry]["Country Name"], 'values': newData})
         newData = [];
     }
+    tempData=data //this is for use in the checkbox function
     console.log(data) //New data shape!
 
     color = d3.scaleOrdinal(d3.schemeCategory10);//color scale using category10
 
-    //Draws grid lines        
+    //Draws grid lines
+    //Source: https://sureshlodha.github.io/CMPS263_Winter2018/
+    //CMPS263FinalProjects/PrescriptionDrugs/index.html
     svg.append("g")
         .attr("class", "grid")
         .attr("transform", "translate(0," + height + ")")
@@ -90,23 +108,26 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
     svg.append("g")
     .attr("class", "grid")
     .call(d3.axisLeft(yScale).ticks(6).tickSize(-width).tickFormat(""))
-
+      
     //Draws the multiple lines
     svg.selectAll(".paths")
         .data(data)
         .enter()
         .append("path")
         .attr("fill", "none")
+        .attr("id", d => d.country.replace(/\s/g,'')) //for the checkbox function
+                                     // ids cant have space, so replaced with ''
         .attr("stroke", d => color(d.country))
         .attr("stroke-width", 1.5)
         .attr("d", d => lines(d.values))
+        .call(transition) // calls the transition function defined above
 
     //Labels the countries
     svg.selectAll("labels")
         .data(data)
         .enter()
         .append("text")
-        .attr("transform", function(d){
+        .attr("transform", function(d){ //translate by final x,y coords
             return `translate(${xScale(2014)}, ${yScale(d.values[14].value)})`
         })
         .attr("x", "0.5rem")
@@ -138,3 +159,32 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .attr("dy", -margin.left/1.5);
 
 });
+
+//Set up the backwards transition.. the only difference is the 
+// switched interpolate string values.
+function transition2(path) {
+    path.transition()
+        .duration(2000)
+        .attrTween("stroke-dasharray", tweenDash2)
+    }
+function tweenDash2() {
+var l = this.getTotalLength(),
+    i = d3.interpolateString(l + "," + l,"0," + l);
+return function(t) { return i(t); };
+}
+
+
+// brute force checkbox solution
+var clicks = [true,true,true,true,true,true]
+function clicked(n){
+    clicks[n] = !clicks[n];
+    // console.log(countries[n])
+    if (!clicks[n]){
+        svg.select(`path#${countries[n].replace(/\s/g,'')}`)
+        .call(transition2)
+    }
+    else{
+        svg.select(`path#${countries[n].replace(/\s/g,'')}`)
+        .call(transition)
+    }
+}
