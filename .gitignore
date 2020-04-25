@@ -1,6 +1,6 @@
 .DS_Store
-/d3-book-master
-/test
+d3-book-master
+test
 node_modules
 /dist
 *.pages
