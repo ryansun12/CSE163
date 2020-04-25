@@ -3,6 +3,8 @@
 var margin = { top: 10, right: 100, bottom: 50, left: 80 },
     width = 800 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
+//Hard coded the domain.. for now. Hopefully this comment gets taken out
+//if I ever get the parseTime to work. 
 var xScale = d3.scaleTime().range([0, width]).domain([2000,2014])
 var yScale = d3.scaleLinear().range([height, 0]);
 var xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
@@ -63,6 +65,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
             }
         }
     }
+    console.log(tempData)
     //Set up Y domain
     //find max in parsed data -- tempData includes country names, so
     //parsing a string as int will yield NaN, and will return false no matter
@@ -92,7 +95,6 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         data.push({'country' : tempData[entry]["Country Name"], 'values': newData})
         newData = [];
     }
-    tempData=data //this is for use in the checkbox function
     console.log(data) //New data shape!
 
     color = d3.scaleOrdinal(d3.schemeCategory10);//color scale using category10
@@ -115,7 +117,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .enter()
         .append("path")
         .attr("fill", "none")
-        .attr("id", d => d.country.replace(/\s/g,'')) //for the checkbox function
+        .attr("id", d => d.country.replace(/\s/g,''))//for the checkbox function
                                      // ids cant have space, so replaced with ''
         .attr("stroke", d => color(d.country))
         .attr("stroke-width", 1.5)
@@ -173,13 +175,14 @@ var l = this.getTotalLength(),
 return function(t) { return i(t); };
 }
 
-
 // brute force checkbox solution
+// apologies for jankiness
 var clicks = [true,true,true,true,true,true]
 function clicked(n){
     clicks[n] = !clicks[n];
     // console.log(countries[n])
     if (!clicks[n]){
+        //ids cant have spaces. ex. "United States" -> "UnitedStates"
         svg.select(`path#${countries[n].replace(/\s/g,'')}`)
         .call(transition2)
     }
