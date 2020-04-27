@@ -3,11 +3,9 @@
 var margin = { top: 10, right: 100, bottom: 50, left: 80 },
     width = 800 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
-//Hard coded the domain.. for now. Hopefully this comment gets taken out
-//if I ever get the parseTime to work. 
-var xScale = d3.scaleTime().range([0, width]).domain([2000,2014])
+var xScale = d3.scaleTime().range([0, width])
 var yScale = d3.scaleLinear().range([height, 0]);
-var xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
+var xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y"));//format year
 var yAxis = d3.axisLeft(yScale).ticks(7).tickFormat(function (d) { return d });
 
 // Setup the svg: also copied from assignment 6
@@ -16,15 +14,15 @@ var svg = d3.select("body").append("svg")
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    
+
 // Define lines for use. This was defined after I reshaped the raw data
 // to match the key:value pairs. 
 var lines = d3.line() // "display line shape"
     .curve(d3.curveBasis) // "to interpolate the curve"
-    .x( d => xScale(d.year))
-    .y( d => yScale(d.value));
+    .x(d => xScale(d.year))
+    .y(d => yScale(d.value));
 
-//To parse the data from string to date
+//To parse the data from string to date, used later.
 var parseTime = d3.timeParse("%Y")
 
 // List of countries required to parse for in the raw csv.
@@ -33,16 +31,22 @@ let tempData = [] //Stores temporary parsed csv data
 
 
 //Set up the transition 
+// Given the path element, this will setup a 2 second transition
+// and apply the tween attribute, which should take in an interpolator,
+// given by the function tweenDash
 // Source: https://bl.ocks.org/mbostock/5649592
 function transition(path) {
     path.transition()
         .duration(2000)
         .attrTween("stroke-dasharray", tweenDash)
-    }
+}
+// This string interpolator will begin at 0,length and end at 
+// length, length, such that it is interpolating the X-values. 
+// interpolateString takes two strings and detects numbers in them
 function tweenDash() {
-var l = this.getTotalLength(),
-    i = d3.interpolateString("0," + l, l + "," + l);
-return function(t) { return i(t); };
+    var l = this.getTotalLength(),
+        i = d3.interpolateString("0," + l, l + "," + l);
+    return function (t) { return i(t); };
 }
 
 //Read the raw CSV and draw chart
@@ -65,7 +69,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
             }
         }
     }
-    console.log(tempData)
+    // console.log(tempData)
     //Set up Y domain
     //find max in parsed data -- tempData includes country names, so
     //parsing a string as int will yield NaN, and will return false no matter
@@ -80,22 +84,25 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
     }
     yScale.domain([0, max]);
     // console.log(yScale.domain()) //it works!
-    
+
     //Now to draw the lines, reshaping the data seems necessary :(
     //Here I am brute forcing it and storing into data[] as normalized
     // k,v pairs with 'year' and 'value'. 
     newData = []
     data = []
-    for (entry in tempData){
+    for (entry in tempData) {
         for (const [key, value] of Object.entries(tempData[entry])) {
-            if (key != "Country Name"){
-                newData.push({'year':key, 'value': value})
+            if (key != "Country Name") {
+                newData.push({ 'year': parseTime(parseInt(key)), 'value': value })
             }
         }
-        data.push({'country' : tempData[entry]["Country Name"], 'values': newData})
+        data.push({ 'country': tempData[entry]["Country Name"], 'values': newData })
         newData = [];
     }
     console.log(data) //New data shape!
+
+    //Scale X domain with extent, which finds min and max.
+    xScale.domain(d3.extent(data[0].values, d => d.year))
 
     color = d3.scaleOrdinal(d3.schemeCategory10);//color scale using category10
 
@@ -108,17 +115,18 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .call(d3.axisBottom(xScale).ticks(15).tickSize(-height).tickFormat(""))
 
     svg.append("g")
-    .attr("class", "grid")
-    .call(d3.axisLeft(yScale).ticks(6).tickSize(-width).tickFormat(""))
-      
+        .attr("class", "grid")
+        .call(d3.axisLeft(yScale).ticks(6).tickSize(-width).tickFormat(""))
+
     //Draws the multiple lines
     svg.selectAll(".paths")
         .data(data)
         .enter()
         .append("path")
         .attr("fill", "none")
-        .attr("id", d => d.country.replace(/\s/g,''))//for the checkbox function
-                                     // ids cant have space, so replaced with ''
+        .attr("class", "line")
+        .attr("id", d => d.country.replace(/\s/g, ''))//for the checkbox function
+        // ids cant have space, so replaced with ''
         .attr("stroke", d => color(d.country))
         .attr("stroke-width", 1.5)
         .attr("d", d => lines(d.values))
@@ -129,8 +137,9 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .data(data)
         .enter()
         .append("text")
-        .attr("transform", function(d){ //translate by final x,y coords
-            return `translate(${xScale(2014)}, ${yScale(d.values[14].value)})`
+        .attr("transform", function (d) { //translate by final x,y coords
+            return `translate(${xScale(parseTime(2014))}, 
+            ${yScale(d.values[14].value)})`
         })
         .attr("x", "0.5rem")
         .attr("y", "0.3rem")
@@ -157,8 +166,108 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .attr("font-weight", "bold")
         .attr("transform", "rotate(-90)") //rotate to align with y-axis
         .style("text-anchor", "middle")
-        .attr("dx", -height/2)
-        .attr("dy", -margin.left/1.5);
+        .attr("dx", -height / 2)
+        .attr("dy", -margin.left / 1.5);
+
+    // Adds the mouse over line effect
+    // This is entirely based on the source that is referenced below. 
+    // I'll to explain it the best I can, but I could be missing some concepts
+    // Source: https://bl.ocks.org/larsenmtl/e3b8b7c2ca4787f77d78f58d41c3da91
+
+    // setup a mouse over element 
+    var mouseG = svg.append("g")
+        .attr("class", "mouse-over-effects");
+
+    // add a path (the vertical line) black, 1px width, 
+    // with initial opacity 0.
+    mouseG.append("path")
+        .attr("class", "mouse-line")
+        .style("stroke", "black")
+        .style("stroke-width", "1px")
+        .style("opacity", "0");
+
+    // Retrieves all elements with class name 'line'
+    // I added this class name to each of the paths.
+    var lines2 = document.getElementsByClassName('line');
+
+    //A
+    var mousePerLine = mouseG.selectAll('.mouse-per-line')
+        .data(data)
+        .enter()
+        .append("g")
+        .attr("class", "mouse-per-line");
+
+    mousePerLine.append("circle")
+        .attr("r", 7)
+        .style("stroke", function (d) {
+            return color(d.country);
+        })
+        .style("fill", "none")
+        .style("stroke-width", "1px")
+        .style("opacity", "0");
+
+    mousePerLine.append("text")
+        .attr("transform", "translate(10,3)");
+
+    mouseG.append('svg:rect') // append a rect to catch mouse movements on canvas
+        .attr('width', width) // can't catch mouse events on a g element
+        .attr('height', height)
+        .attr('fill', 'none')
+        .attr('pointer-events', 'all')
+        .on('mouseout', function () { // on mouse out hide line, circles and text
+            d3.select(".mouse-line")
+                .style("opacity", "0");
+            d3.selectAll(".mouse-per-line circle")
+                .style("opacity", "0");
+            d3.selectAll(".mouse-per-line text")
+                .style("opacity", "0");
+        })
+        .on('mouseover', function () { // on mouse in show line, circles and text
+            d3.select(".mouse-line")
+                .style("opacity", "1");
+            d3.selectAll(".mouse-per-line circle")
+                .style("opacity", "1");
+            d3.selectAll(".mouse-per-line text")
+                .style("opacity", "1");
+        })
+        .on('mousemove', function () { // mouse moving over canvas
+            var mouse = d3.mouse(this);
+            d3.select(".mouse-line")
+                .attr("d", function () {
+                    var d = "M" + mouse[0] + "," + height;
+                    d += " " + mouse[0] + "," + 0;
+                    return d;
+                });
+
+            d3.selectAll(".mouse-per-line")
+                .attr("transform", function (d, i) {
+                    // console.log(width / mouse[0])
+                    var xDate = xScale.invert(mouse[0]),
+                        bisect = d3.bisector(function (d) { return d.date; }).right;
+                    idx = bisect(d.values, xDate);
+
+                    var beginning = 0,
+                        end = lines2[i].getTotalLength(),
+                        target = null;
+
+                    while (true) {
+                        target = Math.floor((beginning + end) / 2);
+                        pos = lines2[i].getPointAtLength(target);
+                        if ((target === end || target === beginning) && pos.x !== mouse[0]) {
+                            break;
+                        }
+                        if (pos.x > mouse[0]) end = target;
+                        else if (pos.x < mouse[0]) beginning = target;
+                        else break; //position found
+                    }
+
+                    d3.select(this).select('text')
+                        .text(yScale.invert(pos.y).toFixed(2));
+
+                    return "translate(" + mouse[0] + "," + pos.y + ")";
+                });
+        })
+
 
 });
 
@@ -168,26 +277,26 @@ function transition2(path) {
     path.transition()
         .duration(2000)
         .attrTween("stroke-dasharray", tweenDash2)
-    }
+}
 function tweenDash2() {
-var l = this.getTotalLength(),
-    i = d3.interpolateString(l + "," + l,"0," + l);
-return function(t) { return i(t); };
+    var l = this.getTotalLength(),
+        i = d3.interpolateString(l + "," + l, "0," + l);
+    return function (t) { return i(t); };
 }
 
 // brute force checkbox solution
 // apologies for jankiness
-var clicks = [true,true,true,true,true,true]
-function clicked(n){
+var clicks = [true, true, true, true, true, true]
+function clicked(n) {
     clicks[n] = !clicks[n];
     // console.log(countries[n])
-    if (!clicks[n]){
+    if (!clicks[n]) {
         //ids cant have spaces. ex. "United States" -> "UnitedStates"
-        svg.select(`path#${countries[n].replace(/\s/g,'')}`)
-        .call(transition2)
+        svg.select(`path#${countries[n].replace(/\s/g, '')}`)
+            .call(transition2)
     }
-    else{
-        svg.select(`path#${countries[n].replace(/\s/g,'')}`)
-        .call(transition)
+    else {
+        svg.select(`path#${countries[n].replace(/\s/g, '')}`)
+            .call(transition)
     }
 }
