@@ -208,7 +208,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .style("stroke-width", "1px")
         .style("opacity", "0");
 
-    //Adds the text values that appear 10,3 pixels away from the circle
+    //Adds the text values that appear 10,-2 pixels away from the circle
     // I added some font specifications to make it more unique
     mousePerLine.append("text")
         .attr("transform", "translate(10,-2)")
