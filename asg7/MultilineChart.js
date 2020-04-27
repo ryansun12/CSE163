@@ -1,6 +1,6 @@
 // Set margins, axis, and scales
 // Mostly reused from assignment 6
-var margin = { top: 10, right: 100, bottom: 50, left: 80 },
+var margin = { top: 14, right: 100, bottom: 50, left: 80 },
     width = 800 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 var xScale = d3.scaleTime().range([0, width])
@@ -28,7 +28,6 @@ var parseTime = d3.timeParse("%Y")
 // List of countries required to parse for in the raw csv.
 const countries = ["Brazil", "Russia", "India", "China", "South Africa", "United States"]
 let tempData = [] //Stores temporary parsed csv data
-
 
 //Set up the transition 
 // Given the path element, this will setup a 2 second transition
@@ -83,11 +82,11 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         }
     }
     yScale.domain([0, max]);
-    // console.log(yScale.domain()) //it works!
 
     //Now to draw the lines, reshaping the data seems necessary :(
     //Here I am brute forcing it and storing into data[] as normalized
     // k,v pairs with 'year' and 'value'. 
+    // This will allow the data to work with d3 functions :)
     newData = []
     data = []
     for (entry in tempData) {
@@ -103,7 +102,6 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
 
     //Scale X domain with extent, which finds min and max.
     xScale.domain(d3.extent(data[0].values, d => d.year))
-
     color = d3.scaleOrdinal(d3.schemeCategory10);//color scale using category10
 
     //Draws grid lines
@@ -169,9 +167,9 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .attr("dx", -height / 2)
         .attr("dy", -margin.left / 1.5);
 
-    // Adds the mouse over line effect
-    // This is entirely based on the source that is referenced below. 
-    // I'll to explain it the best I can, but I could be missing some concepts
+    // The following code adds the moving vertical line effect
+    // This is entirely from the source that is referenced below. 
+    // I tried to explain it the best I can, but I could be missing some concepts
     // Source: https://bl.ocks.org/larsenmtl/e3b8b7c2ca4787f77d78f58d41c3da91
 
     // setup a mouse over element 
@@ -190,13 +188,17 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
     // I added this class name to each of the paths.
     var lines2 = document.getElementsByClassName('line');
 
-    //A
+    //Adds a mouse-per-line class to each of the data elements
     var mousePerLine = mouseG.selectAll('.mouse-per-line')
         .data(data)
         .enter()
         .append("g")
         .attr("class", "mouse-per-line");
 
+    //Adds a circle to each of the elements of mousePerLine
+    //Which basically adds a circle for each of the 6 paths
+    //This also means that there will always be 6 circles, 
+    //regardless of whether the checkboxes are checked or not
     mousePerLine.append("circle")
         .attr("r", 7)
         .style("stroke", function (d) {
@@ -206,15 +208,22 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .style("stroke-width", "1px")
         .style("opacity", "0");
 
+    //Adds the text values that appear 10,3 pixels away from the circle
+    // I added some font specifications to make it more unique
     mousePerLine.append("text")
-        .attr("transform", "translate(10,3)");
+        .attr("transform", "translate(10,-2)")
+        .attr("font-size", "14px")
+        .attr("font-family", "courier")
 
-    mouseG.append('svg:rect') // append a rect to catch mouse movements on canvas
+    //Adds a rectangle to represent the mouse's current position on the canvas
+    mouseG.append('svg:rect')
         .attr('width', width) // can't catch mouse events on a g element
         .attr('height', height)
-        .attr('fill', 'none')
-        .attr('pointer-events', 'all')
-        .on('mouseout', function () { // on mouse out hide line, circles and text
+        .attr('fill', 'none') //colorless
+        .attr('pointer-events', 'all') //In CSS, this means that this SVG
+                // element will be the target of the following pointer events
+
+        .on('mouseout', function () {// on mouse out hide line, circles and text
             d3.select(".mouse-line")
                 .style("opacity", "0");
             d3.selectAll(".mouse-per-line circle")
@@ -222,7 +231,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
             d3.selectAll(".mouse-per-line text")
                 .style("opacity", "0");
         })
-        .on('mouseover', function () { // on mouse in show line, circles and text
+        .on('mouseover', function () {// on mouse in show line, circles and text
             d3.select(".mouse-line")
                 .style("opacity", "1");
             d3.selectAll(".mouse-per-line circle")
@@ -230,45 +239,58 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
             d3.selectAll(".mouse-per-line text")
                 .style("opacity", "1");
         })
-        .on('mousemove', function () { // mouse moving over canvas
-            var mouse = d3.mouse(this);
-            d3.select(".mouse-line")
+        .on('mousemove', function () {// mouse moving over canvas
+            var mouse = d3.mouse(this); //get mouse element(with x,y coords)
+
+            //Specifies the path, which is calculated based on the mouse position
+            d3.select(".mouse-line") //selects the previously created path
                 .attr("d", function () {
+                    //M stands for moveto
                     var d = "M" + mouse[0] + "," + height;
                     d += " " + mouse[0] + "," + 0;
                     return d;
                 });
-
+            //Selects all mouse-per-line classes, which was defined previously
+            //for each of the 6 paths.
             d3.selectAll(".mouse-per-line")
+                //applies the transformation to the vertical line path
                 .attr("transform", function (d, i) {
                     // console.log(width / mouse[0])
-                    var xDate = xScale.invert(mouse[0]),
-                        bisect = d3.bisector(function (d) { return d.date; }).right;
-                    idx = bisect(d.values, xDate);
-
                     var beginning = 0,
+                    //This reads the entire path length for each of the lines
+                    //based on index i. 
                         end = lines2[i].getTotalLength(),
                         target = null;
-
+                    // infinite loop until the position, pos, is "found"
+                    // on the svg canvas. This is done by rounding a target
+                    // to be half of beginning + end, based on the current
+                    // values of end and beginning that will be dynamically
+                    // updated based on those conditional statements. 
+                    // I've removed some conditions that was in the original 
+                    // source code because I noticed that they will always/never occur. 
                     while (true) {
                         target = Math.floor((beginning + end) / 2);
                         pos = lines2[i].getPointAtLength(target);
-                        if ((target === end || target === beginning) && pos.x !== mouse[0]) {
+                        //This is the condition that breaks out of the loop,
+                        // where the target is found
+                        // console.log(pos, mouse[0], target, end, beginning)
+                        if ((target === end || target === beginning)) {
                             break;
                         }
-                        if (pos.x > mouse[0]) end = target;
-                        else if (pos.x < mouse[0]) beginning = target;
-                        else break; //position found
+                        else if (pos.x > mouse[0]) end = target;
+                        else beginning = target;
                     }
-
+                    // Appends the text values based on the y-scale value
+                    // rounded to 2 decimal places, using the discovered 'pos'
+                    // from the previous while (true) loop.
+                    // Invert does the opposite of scale, so given
+                    // a range value, returns the corresponding domain. 
                     d3.select(this).select('text')
                         .text(yScale.invert(pos.y).toFixed(2));
-
+                    //Finally, return the translate coordinates for each path
                     return "translate(" + mouse[0] + "," + pos.y + ")";
                 });
         })
-
-
 });
 
 //Set up the backwards transition.. the only difference is the 
@@ -285,7 +307,6 @@ function tweenDash2() {
 }
 
 // brute force checkbox solution
-// apologies for jankiness
 var clicks = [true, true, true, true, true, true]
 function clicked(n) {
     clicks[n] = !clicks[n];
