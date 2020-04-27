@@ -48,8 +48,23 @@ function tweenDash() {
     return function (t) { return i(t); };
 }
 
-//Read the raw CSV and draw chart
+// Set up the backwards transition for the checkboxes...
+// the only difference is the switched 
+// interpolate string values, otherwise it is identical to 'transition'
+function transition2(path) {
+    path.transition()
+        .duration(2000)
+        .attrTween("stroke-dasharray", tweenDash2)
+}
+function tweenDash2() {
+    var l = this.getTotalLength(),
+        i = d3.interpolateString(l + "," + l, "0," + l);
+    return function (t) { return i(t); };
+}
+
+//Read the raw CSV (Super Bonus?) and draw the graph
 d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
+    // console.log(data)
     //Retrieve only required countries and push to tempData
     data.forEach(function (d) {
         for (const [key, value] of Object.entries(d)) {
@@ -69,6 +84,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         }
     }
     // console.log(tempData)
+
     //Set up Y domain
     //find max in parsed data -- tempData includes country names, so
     //parsing a string as int will yield NaN, and will return false no matter
@@ -102,21 +118,23 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
 
     //Scale X domain with extent, which finds min and max.
     xScale.domain(d3.extent(data[0].values, d => d.year))
-    color = d3.scaleOrdinal(d3.schemeCategory10);//color scale using category10
 
-    //Draws grid lines
-    //Source: https://sureshlodha.github.io/CMPS263_Winter2018/
-    //CMPS263FinalProjects/PrescriptionDrugs/index.html
+    //color scale using category10
+    color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    //Draws grid lines .. requires some css: refer to MultiLinestylesheet.css
+    //Source: https://sureshlodha.github.io/CMPS263_Winter2018/CMPS263FinalProjects/PrescriptionDrugs/index.html
     svg.append("g")
-        .attr("class", "grid")
+        .attr("class", "grid") // such that the css is applied
         .attr("transform", "translate(0," + height + ")")
+        // uses xScale w/ 15 ticks, -height such that points upwards instead of down
         .call(d3.axisBottom(xScale).ticks(15).tickSize(-height).tickFormat(""))
 
     svg.append("g")
         .attr("class", "grid")
         .call(d3.axisLeft(yScale).ticks(6).tickSize(-width).tickFormat(""))
 
-    //Draws the multiple lines
+    //Draws the multiple lines, uses d.country for color and d.values for the path.
     svg.selectAll(".paths")
         .data(data)
         .enter()
@@ -136,11 +154,14 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .enter()
         .append("text")
         .attr("transform", function (d) { //translate by final x,y coords
-            return `translate(${xScale(parseTime(2014))}, 
+            //parseTime because string "2014" needs to be converted
+            return `translate(${xScale(parseTime(2014))},
             ${yScale(d.values[14].value)})`
         })
         .attr("x", "0.5rem")
         .attr("y", "0.3rem")
+        .attr("font-family", "arial")
+        .attr("font-size", "12px")
         .attr("text-anchor", "start")
         .text(d => d.country)
 
@@ -168,111 +189,114 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .attr("dy", -margin.left / 1.5);
 
     // The following code adds the moving vertical line effect
-    // This is entirely from the source that is referenced below. 
-    // I tried to explain it the best I can, but I could be missing some concepts
+    // This is based on the source that is referenced below.
     // Source: https://bl.ocks.org/larsenmtl/e3b8b7c2ca4787f77d78f58d41c3da91
 
     // setup a mouse over element 
-    var mouseG = svg.append("g")
-        .attr("class", "mouse-over-effects");
+    var mouseOver = svg.append("g")
 
-    // add a path (the vertical line) black, 1px width, 
-    // with initial opacity 0.
-    mouseG.append("path")
+    // add a path (the vertical line) grey, 1px width
+    mouseOver.append("path")
         .attr("class", "mouse-line")
-        .style("stroke", "black")
+        .style("stroke", "#3D4849") //charcoal grey
         .style("stroke-width", "1px")
-        .style("opacity", "0");
 
     // Retrieves all elements with class name 'line'
-    // I added this class name to each of the paths.
+    // I added this class name to each of the paths earlier
     var lines2 = document.getElementsByClassName('line');
 
     //Adds a mouse-per-line class to each of the data elements
-    var mousePerLine = mouseG.selectAll('.mouse-per-line')
+    var mousePerLine = mouseOver.selectAll('.mouse-per-line')
         .data(data)
         .enter()
         .append("g")
-        .attr("class", "mouse-per-line");
+        .attr("class", "mouse-per-line"); //adds class to each datapoint, so we can reference it later
 
-    //Adds a circle to each of the elements of mousePerLine
-    //Which basically adds a circle for each of the 6 paths
-    //This also means that there will always be 6 circles, 
-    //regardless of whether the checkboxes are checked or not
-    mousePerLine.append("circle")
-        .attr("r", 7)
+    // Adds a rectangle to each of the elements of mousePerLine
+    // This also means that there will always be 6 rect, regardless of whether 
+    // the checkboxes are checked or not...
+    mousePerLine.append("rect")
+        .attr("width", "5")
+        .attr("height", "5")
+        .attr("x", "-2.5") //center the rect
+        .attr("y", "-2.5")
         .style("stroke", function (d) {
-            return color(d.country);
+            return color(d.country); //still using category10 
         })
-        .style("fill", "none")
+        .style("fill", "transparent")
         .style("stroke-width", "1px")
-        .style("opacity", "0");
+        .attr("opacity", "0") //Such that it doesn't appear on page load.
 
-    //Adds the text values that appear 10,-2 pixels away from the circle
+    //Adds the text values that appear 5,-7 pixels away from each mousePerLine element
+    // This way, when the line reaches the end, it isn't as cluttered
     // I added some font specifications to make it more unique
+    // China and Brazil will inevitably overlap :( but after 2003, it looks nice
     mousePerLine.append("text")
-        .attr("transform", "translate(10,-2)")
-        .attr("font-size", "14px")
+        .attr("transform", "translate(5,-5)")
+        .attr("font-size", "12px")
+        .style('fill', '#3D4849')
         .attr("font-family", "courier")
 
-    //Adds a rectangle to represent the mouse's current position on the canvas
-    mouseG.append('svg:rect')
-        .attr('width', width) // can't catch mouse events on a g element
+    //Adds a rectangle to catch the mouse's position on the canvas, spanning the entire canvas
+    mouseOver.append('svg:rect')
+        .attr('width', width)
         .attr('height', height)
         .attr('fill', 'none') //colorless
         .attr('pointer-events', 'all') //In CSS, this means that this SVG
                 // element will be the target of the following pointer events
 
-        .on('mouseout', function () {// on mouse out hide line, circles and text
-            d3.select(".mouse-line")
+        .on('mouseout', function () {// on mouse out hide line, rectangles and text
+            d3.select(".mouse-line") //The vertical line
                 .style("opacity", "0");
-            d3.selectAll(".mouse-per-line circle")
+            d3.selectAll(".mouse-per-line rect") // The rectangles
                 .style("opacity", "0");
-            d3.selectAll(".mouse-per-line text")
+            d3.selectAll(".mouse-per-line text") // The text (numbers)
                 .style("opacity", "0");
         })
-        .on('mouseover', function () {// on mouse in show line, circles and text
+        .on('mouseover', function () {// on mouse in show line, rectangles and text
             d3.select(".mouse-line")
                 .style("opacity", "1");
-            d3.selectAll(".mouse-per-line circle")
+            d3.selectAll(".mouse-per-line rect")
                 .style("opacity", "1");
             d3.selectAll(".mouse-per-line text")
                 .style("opacity", "1");
         })
         .on('mousemove', function () {// mouse moving over canvas
-            var mouse = d3.mouse(this); //get mouse element(with x,y coords)
+            
+            //'this' references the current calling element
+            var mouse = d3.mouse(this); //get mouse (with x,y coords)
 
             //Specifies the path, which is calculated based on the mouse position
-            d3.select(".mouse-line") //selects the previously created path
-                .attr("d", function () {
+            d3.select(".mouse-line") //selects the vertical line
+                .attr("d", function () { // create the path for the vert. line
                     //M stands for moveto
-                    var d = "M" + mouse[0] + "," + height;
-                    d += " " + mouse[0] + "," + 0;
+                    var d = "M" + mouse[0] + "," + height; //The line is from mouseX, height 
+                    d += " " + mouse[0] + "," + 0; // to mouseX, 0, such that it is vertical
                     return d;
                 });
+
             //Selects all mouse-per-line classes, which was defined previously
-            //for each of the 6 paths.
+            //for each of the 6 data points.
             d3.selectAll(".mouse-per-line")
-                //applies the transformation to the vertical line path
+                //applies the transform: translate property to each of the rectangles/text/line
                 .attr("transform", function (d, i) {
-                    // console.log(width / mouse[0])
                     var beginning = 0,
-                    //This reads the entire path length for each of the lines
-                    //based on index i. 
-                        end = lines2[i].getTotalLength(),
-                        target = null;
+                    //This reads the entire path length for each of the lines based on index i. 
+                    end = lines2[i].getTotalLength(),
+                    target = -1; //some initial target value
+
                     // infinite loop until the position, pos, is "found"
-                    // on the svg canvas. This is done by rounding a target
+                    // on the canvas. This is done by rounding a target
                     // to be half of beginning + end, based on the current
                     // values of end and beginning that will be dynamically
-                    // updated based on those conditional statements. 
-                    // I've removed some conditions that was in the original 
+                    // updated based on the conditional statements and the current mouseX position
+                    // I've removed some unnecessary conditions that was in the original 
                     // source code because I noticed that they will always/never occur. 
                     while (true) {
                         target = Math.floor((beginning + end) / 2);
-                        pos = lines2[i].getPointAtLength(target);
+                        pos = lines2[i].getPointAtLength(target); //get point at target
                         //This is the condition that breaks out of the loop,
-                        // where the target is found
+                        // where the target is found, strictly equal to end or begining
                         // console.log(pos, mouse[0], target, end, beginning)
                         if ((target === end || target === beginning)) {
                             break;
@@ -292,19 +316,6 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
                 });
         })
 });
-
-//Set up the backwards transition.. the only difference is the 
-// switched interpolate string values.
-function transition2(path) {
-    path.transition()
-        .duration(2000)
-        .attrTween("stroke-dasharray", tweenDash2)
-}
-function tweenDash2() {
-    var l = this.getTotalLength(),
-        i = d3.interpolateString(l + "," + l, "0," + l);
-    return function (t) { return i(t); };
-}
 
 // brute force checkbox solution
 var clicks = [true, true, true, true, true, true]
