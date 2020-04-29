@@ -8,7 +8,7 @@ var yScale = d3.scaleLinear().range([height, 0]);
 var xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y"));//format year
 var yAxis = d3.axisLeft(yScale).ticks(7).tickFormat(function (d) { return d });
 
-// Setup the svg: also copied from assignment 6
+// Setup the svg: also reused from assignment 6
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -25,9 +25,14 @@ var lines = d3.line() // "display line shape"
 //To parse the data from string to date, used later.
 var parseTime = d3.timeParse("%Y")
 
+//color scale using category10
+color = d3.scaleOrdinal(d3.schemeCategory10);
+
 // List of countries required to parse for in the raw csv.
-const countries = ["Brazil", "Russia", "India", "China", "South Africa", "United States"]
+var countries = ["Brazil", "Russia", "India", "China", "South Africa", "United States"]
 let tempData = [] //Stores temporary parsed csv data
+
+var currentData = []; // This is for the radiobutton/vertical line implementation
 
 //Set up the transition 
 // Given the path element, this will setup a 2 second transition
@@ -62,7 +67,8 @@ function tweenDash2() {
     return function (t) { return i(t); };
 }
 
-//Read the raw CSV (Super Bonus?) and draw the graph
+//Read the raw CSV and draw the multi-line graph
+//Does this count for the super bonus? 
 d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
     // console.log(data)
     //Retrieve only required countries and push to tempData
@@ -119,8 +125,6 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
     //Scale X domain with extent, which finds min and max.
     xScale.domain(d3.extent(data[0].values, d => d.year))
 
-    //color scale using category10
-    color = d3.scaleOrdinal(d3.schemeCategory10);
 
     //Draws grid lines .. requires some css: refer to MultiLinestylesheet.css
     //Source: https://sureshlodha.github.io/CMPS263_Winter2018/CMPS263FinalProjects/PrescriptionDrugs/index.html
@@ -153,6 +157,7 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .data(data)
         .enter()
         .append("text")
+        .attr("id", d => d.country.replace(/\s/g, ''))//for the checkbox function
         .attr("transform", function (d) { //translate by final x,y coords
             //parseTime because string "2014" needs to be converted
             return `translate(${xScale(parseTime(2014))},
@@ -188,12 +193,27 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .attr("dx", -height / 2)
         .attr("dy", -margin.left / 1.5);
 
-    // The following code adds the moving vertical line effect
-    // This is based on the source that is referenced below.
-    // Source: https://bl.ocks.org/larsenmtl/e3b8b7c2ca4787f77d78f58d41c3da91
+    currentData = data;
+    vertLine(data)
+});
 
-    // setup a mouse over element 
-    var mouseOver = svg.append("g")
+
+// The following code adds the moving vertical line effect
+// This is based on the source that is referenced below.
+// Source: https://bl.ocks.org/larsenmtl/e3b8b7c2ca4787f77d78f58d41c3da91
+
+// The one problem with this current implmentation is that once a 
+// radio button is checked, unchecking will not remove the datapoint
+// for the country on this moving vertical line. I would have to pop the
+// entry off the data for it to work. It's doable, but that would require major
+// changes to the entire code, and I have not found time for that yet...
+
+function vertLine (data){
+    // console.log(data)
+
+    // setup a mouse over element, added id so that it can be redrawn
+    // when another country is added. 
+    var mouseOver = svg.append("g").attr("id", "vert")
 
     // add a path (the vertical line) grey, 1px width
     mouseOver.append("path")
@@ -210,7 +230,8 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         .data(data)
         .enter()
         .append("g")
-        .attr("class", "mouse-per-line"); //adds class to each datapoint, so we can reference it later
+        .attr("class", "mouse-per-line"); //adds class to each datapoint, 
+                                          // so we can reference it later
 
     // Adds a rectangle to each of the elements of mousePerLine
     // This also means that there will always be 6 rect, regardless of whether 
@@ -280,9 +301,9 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
             d3.selectAll(".mouse-per-line")
                 //applies the transform: translate property to each of the rectangles/text/line
                 .attr("transform", function (d, i) {
-                    var beginning = 0,
+                    var beginning = 0
+                    end = lines2[i].getTotalLength()
                     //This reads the entire path length for each of the lines based on index i. 
-                    end = lines2[i].getTotalLength(),
                     target = -1; //some initial target value
 
                     // infinite loop until the position, pos, is "found"
@@ -315,20 +336,131 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
                     return "translate(" + mouse[0] + "," + pos.y + ")";
                 });
         })
-});
+}
 
-// brute force checkbox solution
-var clicks = [true, true, true, true, true, true]
+// brute force checkbox/radio button solution
+// These ugly boolean arrays are just to track whether or 
+// not the radio buttons have been clicked :-)
+
+// In hindsight, I could've done this dynamically with d3. 
+
+var newPaths = [false,false,false,false,false,false]
+var clicks = [true, true, true, true, true, true, 
+    false, false, false, false, false, false]
 function clicked(n) {
+    // Add new path if the radio buttons are checked
+    if (n >= 6 && !newPaths[n-6]){
+        switch(n){
+            case 6:
+                countries[n] = "Ukraine"
+                break;
+            case 7:
+                countries[n] = "Turkey"
+                break;
+            case 8:
+                countries[n] = "Mexico"
+                break;
+            case 9:
+                countries[n] = "Pakistan"
+                break;
+            case 10:
+                countries[n] = "France"
+                break;
+            case 11:
+                countries[n] = "Japan"
+                break;
+            default:
+                break;
+        }
+        addPath(n);
+        newPaths[n-6] = !newPaths[n-6]
+    }
     clicks[n] = !clicks[n];
     // console.log(countries[n])
     if (!clicks[n]) {
         //ids cant have spaces. ex. "United States" -> "UnitedStates"
         svg.select(`path#${countries[n].replace(/\s/g, '')}`)
             .call(transition2)
+
+        svg.select(`text#${countries[n].replace(/\s/g, '')}`)
+            .attr("opacity", "0")
+        
+        // currentData.pop()
+        svg.select("g#vert").remove()
+        vertLine(currentData)
+        
     }
     else {
         svg.select(`path#${countries[n].replace(/\s/g, '')}`)
             .call(transition)
+        svg.select(`text#${countries[n].replace(/\s/g, '')}`)
+            .attr("opacity", "1")
     }
+    
+}
+
+// Scan csv for specified country and add to the graph
+// This is pretty much reusing my previous code above. 
+async function addPath(n){
+    temp = []
+    await d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
+        data.forEach(function (d) {
+            for (const [key, value] of Object.entries(d)) {
+                if (value == countries[n]) {
+                    temp.push(d)
+                    break;
+                }
+            }
+        })
+    })
+    for (const [key, value] of Object.entries(temp[0])) {
+        if ((key < 2000 || key >= 2015) && key != "Country Name") {
+            delete temp[0][key]
+        }
+    }
+    // console.log(temp)
+    temp2 = [], final = []
+    for (const [key, value] of Object.entries(temp[0])) {
+        if (key != "Country Name") {
+            temp2.push({ 'year': parseTime(parseInt(key)), 'value': value })
+        }
+    }
+    final.push({ 'country': temp[0]["Country Name"], 'values': temp2 })
+    // console.log(final)
+
+    svg.selectAll(".paths")
+    .data(final)
+    .enter()
+    .append("path")
+    .attr("fill", "none")
+    .attr("class", "line")
+    .attr("id", d => d.country.replace(/\s/g, ''))
+    .attr("stroke", d => color(d.country))
+    .attr("stroke-width", 1.5)
+    .attr("d", d => lines(d.values))
+    .call(transition) 
+
+  svg.selectAll("labels")
+      .data(final)
+      .enter()
+      .append("text")
+      .attr("id", d => d.country.replace(/\s/g, ''))//for the checkbox function
+      .attr("transform", function (d) {
+          return `translate(${xScale(parseTime(2014))},
+          ${yScale(d.values[14].value)})`
+      })
+      .attr("x", "0.5rem")
+      .attr("y", "0.3rem")
+      .attr("font-family", "arial")
+      .attr("font-size", "12px")
+      .attr("text-anchor", "start")
+      .text(d => d.country)
+
+    //updates the currentData values.. adds the country!
+    currentData.push(final[0])
+    // console.log(currentData)
+
+    //Delete the current DOM element for the vertical line and redraw it
+    svg.select("g#vert").remove()
+    vertLine(currentData)
 }
