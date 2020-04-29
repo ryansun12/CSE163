@@ -204,9 +204,9 @@ d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
 
 // The one problem with this current implmentation is that once a 
 // radio button is checked, unchecking will not remove the datapoint
-// for the country on this moving vertical line. I would have to pop the
-// entry off the data for it to work. It's doable, but that would require major
-// changes to the entire code, and I have not found time for that yet...
+// for the country on this moving vertical line. I would have to redraw
+// the entire svg everytime for it to work like that, so I'm not sure 
+// if that is something we are supposed to do for this assignment.
 
 function vertLine (data){
     // console.log(data)
@@ -339,9 +339,8 @@ function vertLine (data){
 }
 
 // brute force checkbox/radio button solution
-// These ugly boolean arrays are just to track whether or 
+// These boolean arrays are just to track whether or 
 // not the radio buttons have been clicked :-)
-
 // In hindsight, I could've done this dynamically with d3. 
 
 var newPaths = [false,false,false,false,false,false]
@@ -403,6 +402,9 @@ function clicked(n) {
 // This is pretty much reusing my previous code above. 
 async function addPath(n){
     temp = []
+    // Since I'm using 'break' and JS is single-threaded, the await/async
+    // is necessary so that it waits for this loop to complete before
+    // proceeding with the rest of the code.
     await d3.csv("EPCSmallMillionBTU.csv").then(function (data) {
         data.forEach(function (d) {
             for (const [key, value] of Object.entries(d)) {
@@ -456,7 +458,10 @@ async function addPath(n){
       .attr("text-anchor", "start")
       .text(d => d.country)
 
-    //updates the currentData values.. adds the country!
+    // updates the currentData values.. adds the country!
+    // for now, I haven't found a good way to remove it without redrawing the
+    // entire svg, so the vertical line will permanently show the country
+    // even if the radio button is unchecked :( 
     currentData.push(final[0])
     // console.log(currentData)
 
