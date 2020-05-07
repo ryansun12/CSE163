@@ -1,4 +1,9 @@
-    var scatterdataset = [ {
+// Define the margins
+margin = {top: 50, right: 80, bottom: 50, left: 80};
+width = 960 -margin.left -margin.right;
+height = 500 -margin.top -margin.bottom;
+
+   var scatterdataset = [ {
         "name": "United States",
         "country": "United States",
         "gdp": 14.9,
@@ -98,7 +103,7 @@
         height = 500 - margin.top - margin.bottom;
 
     //Define Color
-    var colors = d3.scale.category20();
+    var colors = d3.scaleOrdinal(d3.schemeCategory10);
 
     //Define SVG
       var svg = d3.select("body")
@@ -109,20 +114,20 @@
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     //Define Scales   
-    var xScale = d3.scale.linear()
+    var xScale = d3.scaleLinear()
         .domain([0,16]) //Need to redefine this later after loading the data
         .range([0, width]);
 
-    var yScale = d3.scale.linear()
+    var yScale = d3.scaleLinear()
         .domain([0,450]) //Need to redfine this later after loading the data
         .range([height, 0]);
     
     //Define Tooltip here
     
       
-       //Define Axis
-    var xAxis = d3.svg.axis().scale(xScale).orient("bottom").tickPadding(2);
-    var yAxis = d3.svg.axis().scale(yScale).orient("left").tickPadding(2);
+    //Define Axis
+    var xAxis = d3.axisBottom(xScale)
+    var yAxis = d3.axisLeft(yScale)
     
     //Get Data
     // Define domain for xScale and yScale
