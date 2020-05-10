@@ -1,185 +1,158 @@
-// Define the margins
-margin = {top: 50, right: 80, bottom: 50, left: 80};
-width = 960 -margin.left -margin.right;
-height = 500 -margin.top -margin.bottom;
+/*
 
-   var scatterdataset = [ {
-        "name": "United States",
-        "country": "United States",
-        "gdp": 14.9,
-        "epc": 317,
-        "total": 98.9
-    }, {
+Hover over a circle to show tooltip, need to give it a couple milliseconds to render
 
-        "name": "China",
-        "country": "China",
-        "gdp": 5.93,
-        "epc": 76,
-        "total": 103
-    }, {
-        "name": "Japan",
-        "country": "Japan",
-        "gdp": 5.49,
-        "epc": 171, 
-        "total": 21.7
-    }, {
-        "name": "Germany",
-        "country": "Germany",
-        "gdp": 3.28,
-        "epc": 171,
-        "total": 14.1
-    }, {
-        "name": "France",
-        "country": "France",
-        "gdp": 2.54,
-        "epc": 170,
-        "total": 10.7
-    }, {
-        "name": "United Kingdom",
-        "country": "United Kingdom",
-        "gdp": 2.28,
-        "epc": 143,
-        "total": 8.8
-    }, {
-        "name": "Brazil",
-        "country": "Brazil",
-        "gdp": 2.14,
-        "epc": 58,
-        "total": 11.3
-    }, {
-        "name": "Italy",
-        "country": "Italy",
-        "gdp": 2.04,
-        "epc": 126,
-        "total": 7.6
-    }, {
-        "name": "India",
-        "country": "India",
-        "gdp": 1.70,
-        "epc": 19,
-        "total": 22.9
-    }, {
-        "name": "Canada",
-        "country": "Canada",
-        "gdp": 1.57,
-        "epc": 385,
-        "total": 13.1
-    }, {
-        "name": "Russian Federation",
-        "country": "Russian Federation",
-        "gdp": 1.52,
-        "epc": 206,
-        "total": 29.5
-    }, {
+Pan and drag: Click and hold anywhere within the svg and move cursor 
+                in whatever direction to pan the chart
 
-        "name": "Spain",
-        "country": "Spain",
-        "gdp": 1.37,
-        "epc": 134,
-        "total": 6.1
-    }, {
-        "name": "Australia",
-        "country": "Australia",
-        "gdp": 1.14,
-        "epc": 270,
-        "total": 6.0
-    }, {
-        "name": "Mexico",
-        "country": "Mexico",
-        "gdp": 1.04,
-        "epc": 65,
-        "total": 7.6
-    }, {
-        "name": "Korea",
-        "country": "Korea",
-        "gdp": 1.01,
-        "epc": 222,
-        "total": 10.7
-    }];
+Zoom: Mouse over anywhere within the svg and scroll backward(finger coming towards you)
+        to zoom out, scroll forward (finger going away from you) to zoom in
 
-    //Define Margin
-    var margin = {left: 80, right: 80, top: 50, bottom: 50 }, 
-        width = 960 - margin.left -margin.right,
-        height = 500 - margin.top - margin.bottom;
+*/
 
-    //Define Color
-    var colors = d3.scaleOrdinal(d3.schemeCategory10);
+//Define Margin   
+var margin = { left: 80, right: 80, top: 50, bottom: 50 },
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
 
-    //Define SVG
-      var svg = d3.select("body")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+//Define Color
+var colors = d3.scaleOrdinal(d3.schemeCategory10);
+var tool_x, tool_y;
+
+//Define SVG
+var svg = d3.select("body")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+var temp = svg.append("g")
+
+d3.csv('scatterdata.csv').then((data) => {
+    //convert strings to numbers. could have used parseFloat as well.
+    data.forEach((d) => {
+        d.gdp = +d.gdp;
+        d.population = +d.population;
+        d.ecc = +d.ecc;
+        d.ec = + d.ec
+    })
+    console.log(data)
 
     //Define Scales   
     var xScale = d3.scaleLinear()
-        .domain([0,16]) //Need to redefine this later after loading the data
+        .domain(d3.extent(data.map(d => { return d.gdp })))// map iterates through each child json entry
         .range([0, width]);
 
     var yScale = d3.scaleLinear()
-        .domain([0,450]) //Need to redfine this later after loading the data
+        .domain([0, d3.max(data.map(d => { return d.ecc }))]) //max of ecc values
         .range([height, 0]);
+
+    //Define Tooltip here, initially hidden
+    var tooltip = d3.select("body")
+        .append("div")
+        .attr("id", "tooltip")
+        .style("opacity", 0)
     
-    //Define Tooltip here
-    
-      
     //Define Axis
     var xAxis = d3.axisBottom(xScale)
     var yAxis = d3.axisLeft(yScale)
-    
-    //Get Data
-    // Define domain for xScale and yScale
-    
-    
-   
+
+    //setup a square root that takes input of total energy consumption, scaled by 
+    //the max of the energy consumption in the data
+    // and maps to a radius between 0 and 30.
+    var sqrtScale = d3.scaleSqrt()
+        .domain([0, d3.max(data.map(d => { return d.ec }))])
+        .range([0, 30]);
+
+    var rect = temp.append("rect")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all");
+
     //Draw Scatterplot
-        svg.selectAll(".dot")
-        .data(scatterdataset)
+    var scatter = temp.selectAll(".dot")
+        .data(data)
         .enter().append("circle")
         .attr("class", "dot")
-        .attr("r", "1")
-        .attr("cx", function(d) {return xScale(d.gdp);})
-        .attr("cy", function(d) {return yScale(d.epc);})
-        .style("fill", function (d) { return colors(d.country); });
+        .attr("r", d => { return sqrtScale(d.ec) })
+        .attr("cx", function (d) { return xScale(d.gdp); })
+        .attr("cy", function (d) { return yScale(d.ecc); })
+        .style("fill", function (d) { return colors(d.country); })
+        .on("mouseover", d => { //append tooltip and fill with relevant info
+                tooltip
+                .transition()
+                .duration(25) // setting the duration too high would mess with the opacity values if switching too fast
+                .style("opacity", 1)
+                .style("left", function(){ //make US tooltip appear on the left
+                    if (d.country == "United States") return `${xScale(d.gdp) - 150}px`
+                    return `${xScale(d.gdp) + 150}px`
+                }) //absolute positioned, so requires left/right and top/bottom
+                .style("top", () => `${yScale(d.ecc) + 50}px`)
+
+                //Add tooltip html assigning left, middle, right ids for css
+                tooltip.html(`${d.country}<br>
+                <span id="left">Population</span>
+                <span id="middle">:</span>
+                <span id="right">${d.population} Million</span><br>
+                <span id="left">GDP</span>
+                <span id="middle">:</span>
+                <span id="right">$${d.gdp} Trillion</span><br>
+                <span id="left">EPC</span>
+                <span id="middle">:</span>
+                <span id="right">${d.ecc} Million BTUs</span><br>
+                <span id="left">Total</span>
+                <span id="middle">:</span>
+                <span id="right">${d.ec} Trillion BTUs</span>
+                `);
+        })
+        .on("mouseout", () => { //hide tooltip on mouseout
+            tooltip.transition().duration(25).style("opacity", 0)
+        })
+    
+    
     //Add .on("mouseover", .....
     //Add Tooltip.html with transition and style
     //Then Add .on("mouseout", ....
-    
-    //Scale Changes as we Zoom
-    // Call the function d3.behavior.zoom to Add zoom
 
     //Draw Country Names
-        svg.selectAll(".text")
-        .data(scatterdataset)
-        .enter().append("text")
-        .attr("class","text")
+    temp.selectAll(".text")
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("class", "text")
         .style("text-anchor", "start")
-        .attr("x", function(d) {return xScale(d.gdp);})
-        .attr("y", function(d) {return yScale(d.epc);})
+        .attr("x", function (d) { return xScale(d.gdp); })
+        .attr("y", function (d) { return yScale(d.ecc) - sqrtScale(d.ec) - 2; })
         .style("fill", "black")
-        .text(function (d) {return d.name; });
+        .style("font-size", "0.7rem")
+        .text( d => `${d.country}`);
 
- //x-axis
-    svg.append("g")
+    //x-axis
+    var gX = svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
-        .call(xAxis)
-        .append("text")
+        .call(xAxis);
+        
+    svg.append("text")
+        .attr("transform", "translate(0," + height + ")")
+        .attr("fill", "black")
         .attr("class", "label")
         .attr("y", 50)
-        .attr("x", width/2)
+        .attr("x", width / 2)
         .style("text-anchor", "middle")
         .attr("font-size", "12px")
         .text("GDP (in Trillion US Dollars) in 2010");
 
-    
+
     //Y-axis
-    svg.append("g")
+    var gY = svg.append("g")
         .attr("class", "y axis")
         .call(yAxis)
-        .append("text")
+
+      svg.append("text")
+        .attr("fill", "black")
         .attr("class", "label")
         .attr("transform", "rotate(-90)")
         .attr("y", -50)
@@ -189,6 +162,21 @@ height = 500 -margin.top -margin.bottom;
         .attr("font-size", "12px")
         .text("Energy Consumption per Capita (in Million BTUs per person)");
 
+    // Call the function d3.behavior.zoom to Add zoom
+    update = () => {
+        temp.attr('transform', d3.event.transform);
+        gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)))
+        gY.call(yAxis.scale(d3.event.transform.rescaleY(yScale)))
+    }
     
-     
-//}
+    // Scale Changes as we Zoom
+    var zoom = d3.zoom()
+    .scaleExtent([1, 10])
+    .translateExtent([[-150,0], [width+150, height+500]])
+    .on("zoom", update);
+    
+    svg.call(zoom);
+
+
+
+})
