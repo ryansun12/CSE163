@@ -36,6 +36,8 @@ div#tooltip #middle{
 /*tooltip css*/
 div#tooltip{
   position: absolute;
+  left:-100px; 
+  top:-100px;/*not specifying an intial value makes the whole graph shift a little */
   width:170px;
   height:80px;
   padding:10px;
