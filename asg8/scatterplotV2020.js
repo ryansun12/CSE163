@@ -72,7 +72,7 @@ d3.csv('scatterdata.csv').then((data) => {
 
     //get 3 circle sizes
     let circs = [{value: 1, x:130}, {value: 10, x:100}, {value:100, x:50}]
-    console.log(circs)
+    // console.log(circs)
     temp.append("rect")
         .attr("width", width / 4)
         .attr("height", height / 2 - 10)
@@ -182,6 +182,7 @@ d3.csv('scatterdata.csv').then((data) => {
         .attr("x", width / 2)
         .style("text-anchor", "middle")
         .attr("font-size", "12px")
+        // .attr("font-weight", "bold")
         .text("GDP (in Trillion US Dollars) in 2010");
 
 
@@ -203,19 +204,26 @@ d3.csv('scatterdata.csv').then((data) => {
 
     // Call the function d3.behavior.zoom to Add zoom
     update = () => {
-        temp.attr('transform', d3.event.transform);
-        gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)))
-        gY.call(yAxis.scale(d3.event.transform.rescaleY(yScale)))
+        temp.attr('transform', d3.event.transform); //add event.transform to transform attribute, which consists of the translate and scale values 
+        gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale))) //rescale x
+        gY.call(yAxis.scale(d3.event.transform.rescaleY(yScale))) //rescale y
     }
 
     // Scale Changes as we Zoom
     var zoom = d3.zoom()
-        .scaleExtent([1, 10])
-        .translateExtent([[0, 0], [width + 150, height + 200]])
-        .on("zoom", update);
+        .scaleExtent([1, 10]) //some max scale value
+        .translateExtent([[-100, 0], [width + 300, height + 300]]) //max translate distances
+        .on("zoom", update);//on zoom, call update, defined above
 
     svg.call(zoom);
 
-
-
+    //reset view
+    
+    let reset = () => {
+        svg.transition()
+        .duration(100)
+        .call(zoom.transform, d3.zoomIdentity)
+    }
+    d3.select("button")
+    .on("click", reset);
 })
