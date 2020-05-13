@@ -27,7 +27,20 @@ var svg = d3.select("body")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
-var temp = svg.append("g") // to fix a panning issue i ran into
+//clipping based on 
+//https://bl.ocks.org/jarandaf/df3e58e56e9d0d3b9adb
+svg.append('defs')
+.append('clipPath')
+.attr('id', 'clip')
+.append('rect')
+.attr('y', 0)
+.attr('x',0)
+.attr('width',width)
+.attr('height',height)
+
+var temp = svg.append("g")
+.attr('class', 'temp')
+.attr('clip-path', 'url(#clip)') 
 
 d3.csv('scatterdata.csv').then((data) => {
     //convert strings to numbers. could have used parseFloat as well.
@@ -41,11 +54,11 @@ d3.csv('scatterdata.csv').then((data) => {
 
     //Define Scales   
     var xScale = d3.scaleLinear()
-        .domain([0, d3.max(data.map(d => { return d.gdp })) + 1.05])// map iterates through each child json entry
+        .domain([0, d3.max(data.map(d => { return d.gdp })) + 1.5])// map iterates through each child json entry
         .range([0, width]);
 
     var yScale = d3.scaleLinear()
-        .domain([0, d3.max(data.map(d => { return d.ecc })) + 30]) //max of ecc values
+        .domain([0, d3.max(data.map(d => { return d.ecc })) + 40]) //max of ecc values
         .range([height, 0]);
 
     //Define Tooltip here, initially hidden
@@ -81,6 +94,8 @@ d3.csv('scatterdata.csv').then((data) => {
         .attr("x", width - 210)
         .attr("y", height - 200)
     
+
+    // label for legend
     temp.append("text")
         .attr("x", width - 191)
         .attr("y", height - 170)
@@ -89,6 +104,7 @@ d3.csv('scatterdata.csv').then((data) => {
         .attr("fill", "green")
         .text("Total Energy Consumption")
 
+    //circles on legend
     temp.selectAll("circs")
         .data(circs)
         .enter().append("circle")
@@ -97,6 +113,7 @@ d3.csv('scatterdata.csv').then((data) => {
         .attr("cy", function (d) { return height - d.x})
         .style("fill","white")
 
+    //labels for circles on legend
     temp.selectAll("circ_lables")
     .data(circs)
     .enter()
@@ -204,7 +221,7 @@ d3.csv('scatterdata.csv').then((data) => {
 
     // Call the function d3.behavior.zoom to Add zoom
     update = () => {
-        temp.attr('transform', d3.event.transform); //add event.transform to transform attribute, which consists of the translate and scale values 
+        temp.selectAll("circle, .text, rect, rect_labels, text, circs").attr('transform', d3.event.transform); //add event.transform to transform attribute, which consists of the translate and scale values 
         gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale))) //rescale x
         gY.call(yAxis.scale(d3.event.transform.rescaleY(yScale))) //rescale y
     }
