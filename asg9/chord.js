@@ -31,16 +31,23 @@ innerRadius = outerRadius - 20
 //color scale
 var colors = d3.scaleOrdinal(d3.schemeCategory10);
 
-// ??
+// Create the ribbon generator
+// the edges between each node is represented as a ribbon, weight of the edge
+// is represented as the width of the ribbon near the source. 
+// If two edges exist between 2 nodes, they are represented as a single ribbon
 ribbon = d3.ribbon()
     .radius(innerRadius)
 
 //declare the arc
+//Nodes or groups are represented as arcs, separated by a padding, on the circumference
+// of a circle. 
 arc = d3.arc()
     .innerRadius(innerRadius)
     .outerRadius(outerRadius)
 
 //declare the chord
+//After an array of chords has been declared later, we can render the ribbons
+// for the chords by passing it to d3.ribbon().
 chord = d3.chord()
     .padAngle(0.05)
     // .sortGroups(d3.ascending) //order by group sum
@@ -62,7 +69,7 @@ const svg = d3.select('body')
     .attr("font-family", "sans-serif");
 
 //call the chord data
-const chords = chord(data.matrix);
+const chords = chord(data.matrix); //Generates an array of chords
 
 console.log(chords)
 console.log(chords.groups)
@@ -117,7 +124,7 @@ groupTick
 svg.append("g")
     .attr("fill-opacity", 0.67)
     .selectAll("path")
-    .data(chords)
+    .data(chords) //the array of chords, passed to ribbon to draw the arcs
     .join("path")
     .attr("d", ribbon)
     .attr("fill", d => colors(d.target.index))
