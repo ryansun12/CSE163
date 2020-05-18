@@ -8,14 +8,14 @@
 // Set height and width of svg
 let width = 800, height = 500
 
-//map for names
-const names = new Map;
+//Just creating a map for the names of each group. 
+let names = new Map;
 for(let i =0; i <5; i++){
     names.set(i, `Group ${i}`)
 }
 
 //Same data as from the slide
-data = {
+let data = {
     matrix: [[1, 2, 3, 4, 5],
     [6, 7, 8, 9, 1],
     [2, 3, 4, 5, 6], //2+3+4+5+6 = 20
@@ -24,9 +24,11 @@ data = {
     names: names
 };
 
+console.log(data)
+
 // inner and outer radius of diagram
-outerRadius = Math.min(width, height) * 0.5 - 30
-innerRadius = outerRadius - 20
+let outerRadius = Math.min(width, height) * 0.5 - 30
+let innerRadius = outerRadius - 20
 
 //color scale
 var colors = d3.scaleOrdinal(d3.schemeCategory10);
@@ -35,25 +37,26 @@ var colors = d3.scaleOrdinal(d3.schemeCategory10);
 // the edges between each node is represented as a ribbon, weight of the edge
 // is represented as the width of the ribbon near the source. 
 // If two edges exist between 2 nodes, they are represented as a single ribbon
-ribbon = d3.ribbon()
+let ribbon = d3.ribbon()
     .radius(innerRadius)
 
 //declare the arc
 //Nodes or groups are represented as arcs, separated by a padding, on the circumference
 // of a circle. 
-arc = d3.arc()
+let arc = d3.arc()
     .innerRadius(innerRadius)
     .outerRadius(outerRadius)
 
 //declare the chord
 //After an array of chords has been declared later, we can render the ribbons
 // for the chords by passing it to d3.ribbon().
-chord = d3.chord()
+let chord = d3.chord()
     .padAngle(0.05)
     // .sortGroups(d3.ascending) //order by group sum
     .sortSubgroups(d3.ascending) //order subgroups
 
-//tick values ??
+//tick values 
+// TODO
 function groupTicks(d, step) {
     const k = (d.endAngle - d.startAngle) / d.value;
     return d3.range(0, d.value, step).map(value => {
@@ -62,22 +65,24 @@ function groupTicks(d, step) {
 }
 
 //create the svg
-const svg = d3.select('body')
+// Use a viewbox instead of height/width to avoid dealing with transform translate
+// and automatically scales, and preservers the aspect ratio.
+let svg = d3.select('body')
     .append("svg")
     .attr("viewBox", [-width / 2, -height / 2 - 30, width, height + 100])
     .attr("font-size", 10)
     .attr("font-family", "sans-serif");
 
 //call the chord data
-const chords = chord(data.matrix); //Generates an array of chords
+let chords = chord(data.matrix); //Generates an array of chords
 
-console.log(chords)
-console.log(chords.groups)
+console.log(chords) //the chords
+console.log(chords.groups) //the groups
 
 //adds 0 digit of precision
 // let formatValue = d3.formatPrefix(",.0", 1e0)
 
-const group = svg.append("g")
+let group = svg.append("g")
     .selectAll("g")
     .data(chords.groups)
     .join("g");
@@ -99,7 +104,7 @@ group.append("text")
     .text(d => data.names.get(d.index));
 
 //ticks
-const groupTick = group.append("g")
+let groupTick = group.append("g")
     .selectAll("g")
     .data(d => groupTicks(d, 1))
     .join("g")
