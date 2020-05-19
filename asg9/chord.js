@@ -96,12 +96,12 @@ let arc = d3.arc()
           Each row corresponds to an entity (group)
           The same index in each row corresponds to the same reference node for the flow
 
-    Each chord represents the combined bidirectional flow between the source and target (source can equal target), where each object has properties:
-        index (source node index)
-        subindex ( target node index)
-        startAngle (starting angle in radians)
-        endAngle (ending angle in radians)
-        value (weight or matrix flow value)
+    Each chord combines the bidirectional flow between the source and target (source can equal target), where each object has properties:
+          index (source node index)
+          subindex ( target node index)
+          startAngle (starting angle in radians)
+          endAngle (ending angle in radians)
+          value (weight or matrix flow value)
 
     Typically, this result is passed to d3.ribbon(), a path generator to actually draw the path
     So, the "d" attribute will be the ribbon generator, as stated in the ribbon documentation,
