@@ -69,7 +69,8 @@ let ribbon = d3.ribbon()
 
 //declare the arc function for each group
 //Nodes or groups are represented as arcs, separated by a padding, on the circumference
-// of a circle. 
+// of a circle. Specifying differing an inner radius less than an outer radius
+//creates a donut shape :)
 let arc = d3.arc()
     .innerRadius(innerRadius)
     .outerRadius(outerRadius)
