@@ -45,9 +45,13 @@ let data = {
 console.log("data:", data) // to see our data!
 
 
-// inner and outer radius of diagram
-let outerRadius = Math.min(width, height) * 0.5 - 30
-let innerRadius = outerRadius - 20
+// inner and outer radius of diagram, if height and width were dynamic
+// let outerRadius = Math.min(width, height) * 0.5 - 30
+// let innerRadius = outerRadius - 20
+
+//could also just do the following, if width and height are static
+let outerRadius = 220
+let innerRadius = 200
 
 console.log("outer radius", outerRadius) // to see our radius values!
 console.log("inner radius", innerRadius)
@@ -70,6 +74,43 @@ let arc = d3.arc()
     .innerRadius(innerRadius)
     .outerRadius(outerRadius)
 
+/* 
+    Tutorial: d3.chord()
+    Constructs a new chord layout with the default settings
+
+    Declaration: 
+        let chord = d3.chord() 
+    Parameters:
+        chord.padAngle(angle) -- the padding, specified in radians between each group
+        chord.sortGroups(comparator) -- sort the group positions around the circumference of the circle, or null if nothing is specified
+        chord.sortSubgroups(comparator) -- sort the subgroups of each group, or null if nothing is specified, this will determine the order of the ribbons
+        chord.sortChords(comparator) -- sort the z-index, e.g. which ribbon appears on top
+        chord.matrix(data) Deprecated in V5
+
+    To pass in the matrix data:
+    
+    const chords = chord(matrix)
+        Returns: Array of chords (objects) of (N/2)(N+1) chords, where N = number of groups
+
+    Note: The matrix must be a squared matrix
+          Each row corresponds to an entity (group)
+          The same index in each row corresponds to the same reference node for the flow
+
+    Each chord represents the combined bidirectional flow between the source and target (source can equal target), where each object has properties:
+        index (source node index)
+        subindex ( target node index)
+        startAngle (starting angle in radians)
+        endAngle (ending angle in radians)
+        value (weight or matrix flow value)
+
+    Typically, this result is passed to d3.ribbon(), a path generator to actually draw the path
+    So, the "d" attribute will be the ribbon generator, as stated in the ribbon documentation,
+    given a context, the ribbon genreator will render to this context a sequence of path method calls.
+
+    This is shown in the last part of this javascript code.
+*/
+
+
 //declare the chord
 //After an array of chords has been declared later, we can render the ribbons
 // for the chords by passing it to d3.ribbon().
@@ -91,6 +132,20 @@ function groupTicks(d, step) {
     });
 }
 
+//call the chord data
+let chords = chord(data.matrix); //Generates an array of chords
+// let chords = chord(matrix); // Real data example
+
+console.log("chords: ", chords) //the chords
+console.log("groups: ", chords.groups) //the groups
+console.log("arc for the first group: ", arc(chords.groups[0])) //the arc for the first group
+console.log("ribbon for the first chord: ", ribbon(chords[0])) //the ribbon for the first chord
+
+//adds 0 digit of precision
+// let formatValue = d3.formatPrefix(",.0", 1e0)
+
+// Now everything is setup, we just need to draw the svg!
+
 //create the svg
 // Use a viewbox instead of height/width to avoid dealing with transform translate
 // and automatically scales, and preservers the aspect ratio.
@@ -99,20 +154,6 @@ let svg = d3.select('body')
     .attr("viewBox", [-width / 2, -height / 2 - 30, width, height + 100])
     .attr("font-size", 10)
     .attr("font-family", "sans-serif");
-
-//call the chord data
-let chords = chord(data.matrix); //Generates an array of chords
-// let chords = chord(matrix); // Real data example
-
-console.log("chords: ", chords) //the chords
-console.log("groups: ", chords.groups) //the groups
-console.log("ribbon for the first chord: ", ribbon(chords[0])) //the ribbon for the first chord
-
-//adds 0 digit of precision
-// let formatValue = d3.formatPrefix(",.0", 1e0)
-
-
-// Now everything is setup, we just need to draw the svg!
 
 // Create a group for the arcs, dividing the outer shell into the number of
 // groups of the data
@@ -141,35 +182,33 @@ group.append("text")
     // .text((d,i) => {return names2[i]}); //this also works
     // .text((d,i) => {return NameProvider[i]}); //for the real data example
 
-//tick group, calls groupTicks to get the value and angle 
-let groupTick = group.append("g")
+//Create a tick group, calls groupTicks to get the value and angle 
+let ticks = group.append("g")
     .selectAll("g")
-    .data(d => groupTicks(d, 1))
+    .data(d => groupTicks(d, 1)) //call Mike Bostock's function to compute relevant angle
     .join("g")
     .attr("transform", d => `rotate(${d.angle * 180 / Math.PI - 90}) translate(${outerRadius},0)`);
 
 //tick line
-groupTick.append("line")
-    .attr("stroke", "#000")
-    .attr("x2", 4);
+ticks.append("line") //type: a line
+    .attr("stroke", "rgb(55,23,23)") //color of tick
+    .attr("x2", 4); //length of tick
 
 //tick text
-groupTick
-    .filter(d => d.value % 5 === 0)
+ticks.filter(d => d.value % 5 === 0) //only display text for every 5th tick
     .append("text")
-    .attr("x", 8)
-    .attr("dy", ".35em")
-    .attr("transform", d => d.angle > Math.PI ? "rotate(180) translate(-16)" : null)
+    .attr("x", 7.5) //some offset
+    .attr("y", ".75rem") //some offset
+    .attr("transform", d => d.angle > Math.PI ? "rotate(180) translate(-15)" : null)
     .attr("text-anchor", d => d.angle > Math.PI ? "end" : null)
     .text(d => d.value);
 
-//draw the chords/ribbons!
+//draw the chords/ribbons on the svg.
 svg.append("g")
-    .attr("fill-opacity", 0.67)
+    .attr("fill-opacity", 0.53) //so that ribbons are see-through
     .selectAll("path")
     .data(chords) //the array of chords, passed to ribbon to draw the ribbons
     .join("path")
-    //ribbon, when given a context, renders to this context a sequence of path method calls
     .attr("d", ribbon) //ribbon has an array of paths,a context, as shown in the console.log
-    .attr("fill", d => colors(d.target.index))
-    .attr("stroke", d => d3.rgb(colors(d.target.index)).darker());
+    .attr("fill", d => colors(d.target.index)) //color
+    .attr("stroke", d => d3.rgb(colors(d.target.index)).darker()); //darker shade for the outline
