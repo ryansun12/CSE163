@@ -28,6 +28,7 @@ let data = {
     names: names
 };
 
+
 // Some real data from http://bl.ocks.org/nbremer/94db779237655907b907
 // var NameProvider = ["Apple","HTC","Huawei","LG","Nokia","Samsung","Sony","Other"];
 // var matrix = [
@@ -76,11 +77,14 @@ let chord = d3.chord()
     .padAngle(0.05)
     // .sortGroups(d3.ascending) //order by group sum
     .sortSubgroups(d3.ascending) //order subgroups
+    .sortChords(d3.ascending) //z-order
 
 //tick values 
-// This is copied from Mike Bostock's example :)
-//Computes the value and angle necessary for the tick marks to display neatly
+// This is copied from Mike Bostock's example :) 
+// Given the group data (index, startAngle, endAngle, value, angle)
+//Generates a value and angle, necessary for the tick marks to display neatly
 function groupTicks(d, step) {
+    // console.log(d)
     const k = (d.endAngle - d.startAngle) / d.value;
     return d3.range(0, d.value, step).map(value => {
         return { value: value, angle: value * k + d.startAngle };
@@ -108,7 +112,7 @@ console.log("ribbon for the first chord: ", ribbon(chords[0])) //the ribbon for 
 // let formatValue = d3.formatPrefix(",.0", 1e0)
 
 
-// Now everything is setup, we just need to draw the diagram!
+// Now everything is setup, we just need to draw the svg!
 
 // Create a group for the arcs, dividing the outer shell into the number of
 // groups of the data
@@ -165,6 +169,7 @@ svg.append("g")
     .selectAll("path")
     .data(chords) //the array of chords, passed to ribbon to draw the ribbons
     .join("path")
-    .attr("d", ribbon) //ribbon has an array of paths, as shown in the console.log, so this just iterates through it for each entry in chords
+    //ribbon, when given a context, renders to this context a sequence of path method calls
+    .attr("d", ribbon) //ribbon has an array of paths,a context, as shown in the console.log
     .attr("fill", d => colors(d.target.index))
     .attr("stroke", d => d3.rgb(colors(d.target.index)).darker());
