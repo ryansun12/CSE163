@@ -1,5 +1,5 @@
 /*
- Sources of inspiration: 
+ Sources: 
     https://observablehq.com/@d3/chord-diagram
     https://observablehq.com/@d3/chord-dependency-diagram
     http://bl.ocks.org/nbremer/94db779237655907b907
@@ -11,26 +11,25 @@ let width = 800, height = 500
 //Creates a map for the names of each group for the tutorial data
 //Mike Bostock uses this format because his example has a lot of groups
 //https://observablehq.com/@d3/chord-dependency-diagram
-let names = new Map;
-for(let i =0; i <5; i++){
-    names.set(i, `Group ${i}`)
-}
-//can also just do
-// names2 = ['Group 1', 'Group 2', 'Group 3', 'Group 4', 'Group 5']
+
+// let names = new Map;
+// for(let i =0; i <5; i++){
+//     names.set(i, `Group ${i}`)
+// }
+
+// can also just easily do if there isn't too much data
+names = ['Group 1', 'Group 2', 'Group 3', 'Group 4', 'Group 5']
 
 //Same tutorial data as from my presentation slide
-let data = {
-    matrix: [[1, 2, 3, 4, 5],
-    [6, 7, 8, 9, 1],
-    [2, 3, 4, 5, 6], //2+3+4+5+6 = 20
-    [7, 8, 9, 1, 2], //7+8+9+1+2 = 27
-    [3, 4, 5, 6, 7]],
-    names: names
-};
+let matrix = [[1, 2, 3, 4, 5], // 15
+              [6, 7, 8, 9, 1], // 31
+              [2, 3, 4, 5, 6], // 20
+              [7, 8, 9, 1, 2], // 27
+              [3, 4, 5, 6, 7]];// 25
 
 
 // Some real data from http://bl.ocks.org/nbremer/94db779237655907b907
-// var NameProvider = ["Apple","HTC","Huawei","LG","Nokia","Samsung","Sony","Other"];
+// var names = ["Apple","HTC","Huawei","LG","Nokia","Samsung","Sony","Other"];
 // var matrix = [
 // [9.6899,0.8859,0.0554,0.443,2.5471,2.4363,0.5537,2.5471], /*Apple 19.1584*/
 // [0.1107,1.8272,0,0.4983,1.1074,1.052,0.2215,0.4983], /*HTC 5.3154*/
@@ -42,7 +41,7 @@ let data = {
 // [0.2215,0.7198,0,0.3322,1.6611,1.495,0.1107,5.4264] /*Other 9.9667*/
 // ];
 
-console.log("data:", data) // to see our data!
+console.log("data:", names, matrix)// to see our data!
 
 
 // inner and outer radius of diagram, if height and width were dynamic
@@ -104,9 +103,23 @@ let arc = d3.arc()
           endAngle (ending angle in radians)
           value (weight or matrix flow value)
 
-    Typically, this result is passed to d3.ribbon(), a path generator to actually draw the path
+    Seen in the console.log statements
+    
+    Declare ribbon and arc generators
+    d3.arc() and d3.ribbon()
+
+    Typically, the chords array result is passed to d3.ribbon(), a path generator to actually draw the path
     So, the "d" attribute will be the ribbon generator, as stated in the ribbon documentation,
     given a context, the ribbon genreator will render to this context a sequence of path method calls.
+
+    Meanwhile, the chords.groups is passed to d3.arc() to draw the outer donut shape of the circle, 
+    denoting the groups for the data.
+
+    Pass matrix into chord layout to generate chords
+        const chords = chord(matrix)
+    Create the SVG
+        Draw groups with arc and chords.groups
+        Draw ribbons with ribbon and chords
 
     This is shown in the last part of this javascript code.
 */
@@ -121,29 +134,29 @@ let chord = d3.chord()
     .sortSubgroups(d3.ascending) //order subgroups
     .sortChords(d3.ascending) //z-order
 
-//tick values 
-// This is copied from Mike Bostock's example :) 
-// Given the group data (index, startAngle, endAngle, value, angle)
-//Generates a value and angle, necessary for the tick marks to display neatly
-function groupTicks(d, step) {
-    // console.log(d)
-    const k = (d.endAngle - d.startAngle) / d.value;
-    return d3.range(0, d.value, step).map(value => {
-        return { value: value, angle: value * k + d.startAngle };
-    });
-}
 
 //call the chord data
-let chords = chord(data.matrix); //Generates an array of chords
-// let chords = chord(matrix); // Real data example
+let chords = chord(matrix); //Generates an array of chords
 
 console.log("chords: ", chords) //the chords
 console.log("groups: ", chords.groups) //the groups
 console.log("arc for the first group: ", arc(chords.groups[0])) //the arc for the first group
 console.log("ribbon for the first chord: ", ribbon(chords[0])) //the ribbon for the first chord
 
-//adds 0 digit of precision
-// let formatValue = d3.formatPrefix(",.0", 1e0)
+// helper function to generate angles for the ticks 
+// This is based on Mike Bostock's example, I just added 1 so there's an end tick :) 
+// Given the group data (index, startAngle, endAngle, value, angle)
+// Generates a value and angle, necessary for the tick marks to display neatly
+function groupTicks(d, step) {
+    // console.log(d)
+    const k = (d.endAngle - d.startAngle) / d.value;
+    return d3.range(0, d.value + 1, step).map(value => {
+        return { value: value, angle: value * k + d.startAngle };
+    });
+}
+
+//Formats the digits of precision
+// let formatValue = d3.formatPrefix(",.0", 1e3)
 
 // Now everything is setup, we just need to draw the svg!
 
@@ -173,15 +186,10 @@ group.append("path")
 group.append("text")
     .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; }) //compute angle
     .attr("dy", ".35em") //some y offset, not really needed for our example
-    .attr("transform", d => `
-      rotate(${(d.angle * 180 / Math.PI - 90)})
-      translate(${innerRadius + 50})
-      ${d.angle > Math.PI ? "rotate(180)" : ""}
-    `) // rotate and translate depending on the angle computed in the each() clause
+    // rotate and translate depending on the angle computed in the each() clause
+    .attr("transform", d => ` rotate(${(d.angle * 180 / Math.PI - 90)}) translate(${innerRadius + 50}) ${d.angle > Math.PI ? "rotate(180)" : ""}`) 
     .attr("text-anchor", d => d.angle > Math.PI ? "end" : null) //text anchor based on the angle
-    .text(d => data.names.get(d.index)); // the name of the group
-    // .text((d,i) => {return names2[i]}); //this also works
-    // .text((d,i) => {return NameProvider[i]}); //for the real data example
+    .text((d,i) => {return names[i]}); //the names of the groups
 
 //Create a tick group, calls groupTicks to get the value and angle 
 let ticks = group.append("g")
@@ -196,10 +204,10 @@ ticks.append("line") //type: a line
     .attr("x2", 4); //length of tick
 
 //tick text
-ticks.filter(d => d.value % 5 === 0) //only display text for every 5th tick
+ticks.filter(d => d.value % 8 === 0) //only display text for every 8th tick
     .append("text")
-    .attr("x", 7.5) //some offset
-    .attr("y", ".75rem") //some offset
+    .attr("x", 8) //some offset
+    .attr("y", ".25rem") //some offset
     .attr("transform", d => d.angle > Math.PI ? "rotate(180) translate(-15)" : null)
     .attr("text-anchor", d => d.angle > Math.PI ? "end" : null)
     .text(d => d.value);
