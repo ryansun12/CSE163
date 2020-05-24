@@ -17,7 +17,20 @@ let width = 800, height = 500
 //     names.set(i, `Group ${i}`)
 // }
 
-// can also just easily do if there isn't too much data
+//random data
+// let x = 15
+// let names = [];
+// let matrix = [];
+// for (let i = 0; i < x; i++){
+//     names.push(`Group ${i}`)
+//     let t = [];
+//     for (let j = 0; j < x; j++){
+//         t.push(Math.random() * 10)
+//     }  
+//     matrix.push(t)
+// }
+
+// can also hard code it
 names = ['Group 1', 'Group 2', 'Group 3', 'Group 4', 'Group 5']
 
 //Same tutorial data as from my presentation slide
@@ -130,9 +143,9 @@ let arc = d3.arc()
 // for the chords by passing it to d3.ribbon().
 let chord = d3.chord()
     .padAngle(0.05)
-    // .sortGroups(d3.ascending) //order by group sum
+    .sortGroups(d3.descending) //order by group sum
     .sortSubgroups(d3.ascending) //order subgroups
-    .sortChords(d3.ascending) //z-order
+    .sortChords(d3.descending) //z-order
 
 
 //call the chord data
@@ -186,7 +199,7 @@ group.append("path")
 group.append("text")
     .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; }) //compute angle
     .attr("dy", ".35em") //some y offset, not really needed for our example
-    // rotate and translate depending on the angle computed in the each() clause
+    
     .attr("transform", d => ` rotate(${(d.angle * 180 / Math.PI - 90)}) translate(${innerRadius + 50}) ${d.angle > Math.PI ? "rotate(180)" : ""}`) 
     .attr("text-anchor", d => d.angle > Math.PI ? "end" : null) //text anchor based on the angle
     .text((d,i) => {return names[i]}); //the names of the groups
