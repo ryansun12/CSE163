@@ -1,14 +1,14 @@
-Region,Population,Area,Population Density
-Attica,3827624,3808,1001.11
-Central Macedonia,1881869,18811,99.66
-Thessaly,732762,14037,52.06
-Western Greece,679796,11350,59.93
-Crete,623065,8336,74.54
-Eastern Macedonia and Thrace,608182,14157,42.82
-Peloponnese,577903,15490,37.57
-Central Greece,547903,15549,35.17
-Epirus,336856,9203,36.58
-South Aegean,308975,5286,58.38
-Western Macedonia,283689,9451,29.85
-Ionian Islands,207855,2307,89.50
-North Aegean,199231,3836,51.57
+Region,Population,Area,Population Density,GDP
+Attica,3827624,3808,1001.11,110546
+Central Macedonia,1881869,18811,99.66,32285
+Thessaly,732762,14037,52.06,11608
+Western Greece,679796,11350,59.93,10659
+Crete,623065,8336,74.54,11243
+Eastern Macedonia and Thrace,608182,14157,42.82,9265
+Peloponnese,577903,15490,37.57,9809
+Central Greece,547903,15549,35.17,10537
+Epirus,336856,9203,36.58,5079
+South Aegean,308975,5286,58.38,7646
+Western Macedonia,283689,9451,29.85,5506
+Ionian Islands,207855,2307,89.50,4130
+North Aegean,199231,3836,51.57,3330
