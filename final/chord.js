@@ -2,13 +2,20 @@ var slider = document.getElementById("myRange");
 var output = document.getElementById("demo");
 
 output.innerHTML = slider.value; // Display the default slider value
+var curYear = 2015;
+slider.step = 5;
 
-var curYear;
 // Update the current slider value (each time you drag the slider handle)
+// This just makes 2019 display instead of 2020, since data is for 2019, and I don't want to deal with
+// the slider step.
 slider.oninput = function () {
-    curYear = this.value;
-    output.innerHTML = curYear;
+    let display = this.value;
+    if (this.value == 2020) {
+        display = 2019
+    }
+    output.innerHTML = display;
 }
+
 
 var width = 960,
     height = 960,
@@ -133,6 +140,27 @@ function render(data) {
         .style("font-size", "10pt")
         .style("cursor", "default")
         .call(groupHover);
+
+    // //Create a tick group, calls groupTicks to get the value and angle 
+    // let ticks = groups.append("g")
+    //     .selectAll("g")
+    //     .data(d => groupTicks(d, 1)) //call Mike Bostock's function to compute relevant angle
+    //     .join("g")
+    //     .attr("transform", d => `rotate(${d.angle * 180 / Math.PI - 90}) translate(${outerRadius},0)`);
+
+    // //tick line
+    // ticks.append("line") //type: a line
+    //     .attr("stroke", "rgb(55,23,23)") //color of tick
+    //     .attr("x2", 4); //length of tick
+
+    // //tick text
+    // ticks.filter(d => d.value % 5 === 0) //only display text for every 5th tick
+    //     .append("text")
+    //     .attr("x", 7.5) //some offset
+    //     .attr("y", ".75rem") //some offset
+    //     .attr("transform", d => d.angle > Math.PI ? "rotate(180) translate(-15)" : null)
+    //     .attr("text-anchor", d => d.angle > Math.PI ? "end" : null)
+    //     .text(d => d.value);
 }
 
 // Sets up hover interaction to highlight a chord group.
@@ -198,16 +226,16 @@ function generateMatrix(data) {
 }
 
 d3.csv('migration.csv').then(data => {
-    data.forEach( d => {
+    data.forEach(d => {
         d.count = +d.count;
     })
     d3.json('hierarchy.json').then(h => {
         var dataForRegions = aggregate(data, h)
 
-        // Reduce clutter by filtering out links with relatively low counts.
-        .filter(function (d) {
-            return d.count > 10000;
-        });
+            // Reduce clutter by filtering out links with relatively low counts.
+            .filter(function (d) {
+                return d.count > 10000;
+            });
 
         render(dataForRegions);
     });
@@ -246,68 +274,18 @@ function aggregate(data, hierarchy) {
     });
 
 }
-// let width = 800, height = 500
 
-// let names = new Map;
-// for (let i = 0; i < 5; i++) {
-//     names.set(i, `Group ${i}`)
-// }
-
-// let data = {
-//     matrix: [[1, 2, 3, 4, 5],
-//     [6, 7, 8, 9, 1],
-//     [2, 3, 4, 5, 6], //2+3+4+5+6 = 20
-//     [7, 8, 9, 1, 2], //7+8+9+1+2 = 27
-//     [3, 4, 5, 6, 7]],
-//     names: names
-// };
-
-
-// console.log("data:", data) // to see our data!
-
-// let outerRadius = 220
-// let innerRadius = 200
-
-// console.log("outer radius", outerRadius) // to see our radius values!
-// console.log("inner radius", innerRadius)
-
-// //color scale
-// var colors = d3.scaleOrdinal(d3.schemeCategory10);
-
-// let ribbon = d3.ribbon()
-//     .radius(innerRadius)
-
-// let arc = d3.arc()
-//     .innerRadius(innerRadius)
-//     .outerRadius(outerRadius)
-
-
-// let chord = d3.chord()
-//     .padAngle(0.05)
-//     // .sortGroups(d3.ascending) //order by group sum
-//     .sortSubgroups(d3.ascending) //order subgroups
-//     .sortChords(d3.ascending) //z-order
-
-// //tick values 
-// // This is copied from Mike Bostock's example :) 
-// // Given the group data (index, startAngle, endAngle, value, angle)
-// //Generates a value and angle, necessary for the tick marks to display neatly
-// function groupTicks(d, step) {
-//     // console.log(d)
-//     const k = (d.endAngle - d.startAngle) / d.value;
-//     return d3.range(0, d.value, step).map(value => {
-//         return { value: value, angle: value * k + d.startAngle };
-//     });
-// }
-
-// //call the chord data
-// let chords = chord(data.matrix); //Generates an array of chords
-// // let chords = chord(matrix); // Real data example
-
-// console.log("chords: ", chords) //the chords
-// console.log("groups: ", chords.groups) //the groups
-// console.log("arc for the first group: ", arc(chords.groups[0])) //the arc for the first group
-// console.log("ribbon for the first chord: ", ribbon(chords[0])) //the ribbon for the first chord
+//tick values 
+// This is copied from Mike Bostock's example :) 
+// Given the group data (index, startAngle, endAngle, value, angle)
+//Generates a value and angle, necessary for the tick marks to display neatly
+function groupTicks(d, step) {
+    // console.log(d)
+    const k = (d.endAngle - d.startAngle) / d.value;
+    return d3.range(0, d.value, step).map(value => {
+        return { value: value, angle: value * k + d.startAngle };
+    });
+}
 
 // let svg = d3.select('body')
 //     .append("svg")
@@ -340,26 +318,6 @@ function aggregate(data, hierarchy) {
 // // .text((d,i) => {return names2[i]}); //this also works
 // // .text((d,i) => {return NameProvider[i]}); //for the real data example
 
-// //Create a tick group, calls groupTicks to get the value and angle 
-// let ticks = group.append("g")
-//     .selectAll("g")
-//     .data(d => groupTicks(d, 1)) //call Mike Bostock's function to compute relevant angle
-//     .join("g")
-//     .attr("transform", d => `rotate(${d.angle * 180 / Math.PI - 90}) translate(${outerRadius},0)`);
-
-// //tick line
-// ticks.append("line") //type: a line
-//     .attr("stroke", "rgb(55,23,23)") //color of tick
-//     .attr("x2", 4); //length of tick
-
-// //tick text
-// ticks.filter(d => d.value % 5 === 0) //only display text for every 5th tick
-//     .append("text")
-//     .attr("x", 7.5) //some offset
-//     .attr("y", ".75rem") //some offset
-//     .attr("transform", d => d.angle > Math.PI ? "rotate(180) translate(-15)" : null)
-//     .attr("text-anchor", d => d.angle > Math.PI ? "end" : null)
-//     .text(d => d.value);
 
 // //draw the chords/ribbons on the svg.
 // svg.append("g")
