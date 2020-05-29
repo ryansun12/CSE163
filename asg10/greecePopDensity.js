@@ -1,3 +1,11 @@
+/*
+
+    Greece SHP data at https://gadm.org/download_country_v3.html
+
+    Converted to TopoJSON at https://mapshaper.org/
+
+*/
+
 var margin = { top: 10, right: 10, bottom: 10, left: 10 };
 var width = 1200 - margin.left - margin.right;
 var height = 900 - margin.top - margin.bottom;
