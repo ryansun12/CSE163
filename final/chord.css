@@ -1,5 +1,6 @@
 body {
     text-align: center;
+    overflow-x: hidden;
 }
 
 .slidecontainer {
@@ -39,4 +40,16 @@ body {
     height: 20px; /* Slider handle height */
     background: rgb(28, 36, 160); /* Green background */
     cursor: pointer; /* Cursor on hover */
+  }
+
+  .options{
+    position:relative;
+    left:50%;
+    margin: 0 0 0 -115px;
+    display:flex;
+  }
+
+  #select{
+    height:2rem;
+    margin: 0 2rem 0 0;
   }
